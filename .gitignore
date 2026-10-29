@@ -1,0 +1,51 @@
+# Local Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+# All data/generated dataset content stays local; preserve preprocessing source/docs
+/Dataset/*
+!/Dataset/preprocessdata.py
+!/Dataset/README.md
+# Archives and learned/bulk artifacts anywhere
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.7z
+*.rar
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npy
+*.npz
+checkpoints/
+weights/
+embeddings/
+outputs/
+artifacts/
+runs/
+wandb/
+lightning_logs/
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+*service_account*.json
+secrets.*
+.idea/
+.vscode/
