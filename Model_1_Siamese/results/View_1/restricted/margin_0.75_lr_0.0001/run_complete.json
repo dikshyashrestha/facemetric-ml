@@ -1,0 +1,29 @@
+{
+  "variant": "restricted",
+  "stage": "View 1",
+  "run_number": null,
+  "held_out_folds": [],
+  "margin": 0.75,
+  "learning_rate": 0.0001,
+  "seed": 42,
+  "epochs_completed": 30,
+  "optimizer_updates": 4140,
+  "training_seconds": 8145.1,
+  "validation_seconds": 1795.1,
+  "final_train_loss": 0.3235445303808559,
+  "final_validation_accuracy": 0.588,
+  "final_validation_auc": 0.597834,
+  "best_validation_accuracy": 0.615,
+  "best_validation_epoch": 21,
+  "peak_sampled_mps_driver_mib": 3426.53,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "training_data": {
+    "training_identities": 2132,
+    "evaluation_identity_overlap": 0,
+    "training_pairs": 2200,
+    "genuine_pairs": 1100,
+    "impostor_pairs": 1100,
+    "training_images": 3443
+  },
+  "device": "mps"
+}
