@@ -1,0 +1,250 @@
+{
+  "model": "Siamese network, contrastive loss",
+  "variant": "unrestricted",
+  "lfw_protocol": "unrestricted, labeled outside data",
+  "fold_scheme": "reduced five-run scheme (PDF 4.2): run j held out folds 2j-1, 2j",
+  "fold_to_run": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 4,
+    "8": 4,
+    "9": 5,
+    "10": 5
+  },
+  "n_training_runs": 5,
+  "seed": 42,
+  "seeds_note": "one seed per run (42); additional seeds not run",
+  "final_hyperparameters": {
+    "margin": 1.25,
+    "learning_rate": 0.0001,
+    "epochs": 30,
+    "batch_pairs": 16,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0005,
+    "lr_schedule": "cosine",
+    "pairs_per_epoch": 4800
+  },
+  "view1_selection": {
+    "variant": "unrestricted",
+    "margin": "1.25",
+    "learning_rate": "0.0001",
+    "epochs": "30",
+    "final_validation_accuracy": "0.625",
+    "final_validation_auc": "0.6502160000000001",
+    "best_validation_accuracy": "0.631",
+    "best_validation_epoch": "29",
+    "final_train_loss": "0.44609213850714946",
+    "training_minutes": "135.6",
+    "run_folder": "margin_1.25_lr_0.0001",
+    "rank_within_variant": "1",
+    "selection_criterion": "highest final-epoch View 1 accuracy (best threshold on pairsDevTest), ties by AUC"
+  },
+  "cosine": {
+    "accuracy_mean": 0.6648333333333334,
+    "accuracy_std": 0.039701432010743685,
+    "auc": 0.7134159444444446,
+    "eer": 0.33466666666666667,
+    "tar_at_far_0.01": 0.09166666666666666,
+    "fold_accuracy_file": "fold_accuracy.csv"
+  },
+  "squared_l2": {
+    "accuracy_mean": 0.6648333333333334,
+    "accuracy_std": 0.039701432010743685,
+    "auc": 0.713415888888889,
+    "eer": 0.33466666666666667,
+    "tar_at_far_0.01": 0.09166666666666666,
+    "fold_accuracy_file": "fold_accuracy_squared_l2.csv"
+  },
+  "accuracy_std_note": "sample standard deviation (ddof=1) over the 10 folds",
+  "squared_l2_vs_2_minus_2cos_max_abs_diff": 4.76837158203125e-07,
+  "pair_scores_files": [
+    "pair_scores.csv",
+    "pair_scores_squared_l2.csv"
+  ],
+  "training_time_total_seconds": 88535.2,
+  "training_time_mean_per_run_seconds": 17707.0,
+  "epochs_per_run": [
+    30,
+    30,
+    30,
+    30,
+    30
+  ],
+  "per_run": [
+    {
+      "variant": "unrestricted",
+      "stage": "View 2",
+      "run_number": 1,
+      "held_out_folds": [
+        1,
+        2
+      ],
+      "margin": 1.25,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "optimizer_updates": 9000,
+      "training_seconds": 17700.6,
+      "validation_seconds": 0,
+      "final_train_loss": 0.45018834675351777,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 3420.08,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "training_identities": 4593,
+        "evaluation_identity_overlap": 0,
+        "training_images": 10497,
+        "identities_with_2plus_images": 1336
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "unrestricted",
+      "stage": "View 2",
+      "run_number": 2,
+      "held_out_folds": [
+        3,
+        4
+      ],
+      "margin": 1.25,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "optimizer_updates": 9000,
+      "training_seconds": 17705.1,
+      "validation_seconds": 0,
+      "final_train_loss": 0.38857912639776865,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 3420.08,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "training_identities": 4637,
+        "evaluation_identity_overlap": 0,
+        "training_images": 10820,
+        "identities_with_2plus_images": 1375
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "unrestricted",
+      "stage": "View 2",
+      "run_number": 3,
+      "held_out_folds": [
+        5,
+        6
+      ],
+      "margin": 1.25,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "optimizer_updates": 9000,
+      "training_seconds": 17701.6,
+      "validation_seconds": 0,
+      "final_train_loss": 0.3738819881280263,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 3420.08,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "training_identities": 4655,
+        "evaluation_identity_overlap": 0,
+        "training_images": 11051,
+        "identities_with_2plus_images": 1374
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "unrestricted",
+      "stage": "View 2",
+      "run_number": 4,
+      "held_out_folds": [
+        7,
+        8
+      ],
+      "margin": 1.25,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "optimizer_updates": 9000,
+      "training_seconds": 17702.9,
+      "validation_seconds": 0,
+      "final_train_loss": 0.37854361479481063,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 3420.08,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "training_identities": 4551,
+        "evaluation_identity_overlap": 0,
+        "training_images": 10321,
+        "identities_with_2plus_images": 1311
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "unrestricted",
+      "stage": "View 2",
+      "run_number": 5,
+      "held_out_folds": [
+        9,
+        10
+      ],
+      "margin": 1.25,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "optimizer_updates": 9000,
+      "training_seconds": 17725.0,
+      "validation_seconds": 0,
+      "final_train_loss": 0.4384767942627271,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 3420.08,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "training_identities": 4560,
+        "evaluation_identity_overlap": 0,
+        "training_images": 10243,
+        "identities_with_2plus_images": 1324
+      },
+      "device": "mps"
+    }
+  ],
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.14.0",
+    "python_platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "peak_sampled_mps_driver_mib": 3420.08,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "software": {
+    "python": "3.13.9",
+    "torch": "2.14.0",
+    "torchvision": "0.29.1",
+    "numpy": "2.3.5",
+    "scikit_learn": "1.7.2",
+    "platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "git_commit": "8900dec4c766fffd338c14a352fe2e3c17a67992",
+    "git_uncommitted_changes": true
+  }
+}
