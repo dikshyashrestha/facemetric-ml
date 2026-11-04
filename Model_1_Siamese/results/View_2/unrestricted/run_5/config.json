@@ -1,0 +1,94 @@
+{
+  "model": "Siamese network, contrastive loss",
+  "variant": "unrestricted",
+  "lfw_protocol": "unrestricted, labeled outside data",
+  "stage": "View 2",
+  "run_number": 5,
+  "held_out_folds": [
+    9,
+    10
+  ],
+  "fold_scheme": "reduced five-run scheme (PDF 4.2): run j holds out folds 2j-1 and 2j",
+  "seed": 42,
+  "backbone": "Common.base_model.FaceEmbeddingNet (modified ResNet-18, random init)",
+  "embedding_dim": 512,
+  "trainable_parameters": 11433536,
+  "loss": {
+    "name": "contrastive (Hadsell et al., 2006)",
+    "formula": "y*d^2 + (1-y)*max(0, m-d)^2, mean over pairs",
+    "distance": "Euclidean distance between L2-normalized embeddings",
+    "margin": 1.25
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ]
+  },
+  "lr_schedule": {
+    "name": "CosineAnnealingLR",
+    "T_max_epochs": 30,
+    "eta_min": 0.0,
+    "step": "once per epoch"
+  },
+  "batch": {
+    "pairs_per_batch": 16,
+    "genuine_per_batch": 8,
+    "impostor_per_batch": 8,
+    "forward_pass": "both images of all pairs in one batch of 32 images"
+  },
+  "pairs_per_epoch": 4800,
+  "batches_per_epoch": 300,
+  "optimizer_updates_planned": 9000,
+  "max_epochs": 30,
+  "pair_sampling": "fresh pairs every epoch from training identities: genuine = uniform identity with >=2 images, two distinct images; impostor = two distinct uniform identities (singletons allowed), one random image each",
+  "pair_sampling_seed": "numpy default_rng([42, epoch])",
+  "training_data": {
+    "training_identities": 4560,
+    "evaluation_identity_overlap": 0,
+    "training_images": 10243,
+    "identities_with_2plus_images": 1324
+  },
+  "augmentation": "random horizontal flip p=0.5, independently per image",
+  "normalization": "RGB 112x112, (pixel - 127.5) / 128",
+  "test_time_features": "original + flipped embeddings summed, then L2-normalized",
+  "validation": null,
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.14.0",
+    "python_platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "software": {
+    "python": "3.13.9",
+    "torch": "2.14.0",
+    "torchvision": "0.29.1",
+    "numpy": "2.3.5",
+    "scikit_learn": "1.7.2",
+    "platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "git_commit": "8900dec4c766fffd338c14a352fe2e3c17a67992",
+    "git_uncommitted_changes": true
+  },
+  "settings_key": {
+    "variant": "unrestricted",
+    "stage": "view2",
+    "held_out_folds": [
+      9,
+      10
+    ],
+    "margin": 1.25,
+    "learning_rate": 0.0001,
+    "epochs": 30,
+    "batch_pairs": 16,
+    "seed": 42,
+    "weight_decay": 0.0005,
+    "pairs_per_epoch": 4800,
+    "smoke_test": false
+  }
+}
