@@ -1,0 +1,276 @@
+{
+  "model": "SphereFace (A-Softmax)",
+  "variant": "sphereface",
+  "lfw_protocol": "unrestricted, labeled outside data",
+  "fold_scheme": "reduced five-run scheme (PDF 4.2): run j held out folds 2j-1, 2j",
+  "fold_to_run": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 4,
+    "8": 4,
+    "9": 5,
+    "10": 5
+  },
+  "n_training_runs": 5,
+  "seed": 42,
+  "seeds_note": "one seed per run (42); additional seeds not run",
+  "final_hyperparameters": {
+    "margin": 3,
+    "annealing": true,
+    "learning_rate": 0.0001,
+    "epochs": 30,
+    "lambda_base": 1000.0,
+    "lambda_gamma": 0.12,
+    "lambda_power": 1.0,
+    "lambda_min": 5.0,
+    "batch_size": 64,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0005,
+    "lr_schedule": "cosine",
+    "min_images_per_class": 2
+  },
+  "view1_selection": {
+    "variant": "sphereface",
+    "margin": "3",
+    "annealing": "True",
+    "learning_rate": "0.0001",
+    "epochs": "30",
+    "final_validation_accuracy": "0.803",
+    "final_validation_auc": "0.8765799999999999",
+    "best_validation_accuracy": "0.804",
+    "best_validation_epoch": "29",
+    "final_train_loss": "1.5367629252947295",
+    "final_target_angle_degrees": "49.46069530340341",
+    "training_minutes": "69.4",
+    "run_folder": "m_3_anneal_lr_0.0001",
+    "rank_within_variant": "1",
+    "selection_criterion": "highest final-epoch View 1 accuracy (best threshold on pairsDevTest), ties by AUC"
+  },
+  "cosine": {
+    "accuracy_mean": 0.7808333333333334,
+    "accuracy_std": 0.030176947296705604,
+    "auc": 0.8688661666666666,
+    "eer": 0.21499999999999997,
+    "tar_at_far_0.01": 0.30333333333333334,
+    "fold_accuracy_file": "fold_accuracy.csv"
+  },
+  "accuracy_std_note": "sample standard deviation (ddof=1) over the 10 folds",
+  "pair_scores_files": [
+    "pair_scores.csv"
+  ],
+  "classes_per_run": [
+    1336,
+    1375,
+    1374,
+    1311,
+    1324
+  ],
+  "training_images_per_run": [
+    7240,
+    7558,
+    7770,
+    7081,
+    7007
+  ],
+  "training_time_total_seconds": 23352.8,
+  "training_time_mean_per_run_seconds": 4670.6,
+  "epochs_per_run": [
+    30,
+    30,
+    30,
+    30,
+    30
+  ],
+  "per_run": [
+    {
+      "variant": "sphereface",
+      "stage": "View 2",
+      "run_number": 1,
+      "held_out_folds": [
+        1,
+        2
+      ],
+      "margin": 3,
+      "annealing": true,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "iterations": 3390,
+      "training_seconds": 4561.4,
+      "validation_seconds": 0,
+      "final_train_loss": 1.6116491302979732,
+      "final_annealing_lambda": 5.0,
+      "final_target_angle_degrees": 49.05751466329119,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5424.17,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1336,
+        "training_images": 7240,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "sphereface",
+      "stage": "View 2",
+      "run_number": 2,
+      "held_out_folds": [
+        3,
+        4
+      ],
+      "margin": 3,
+      "annealing": true,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "iterations": 3540,
+      "training_seconds": 4751.5,
+      "validation_seconds": 0,
+      "final_train_loss": 1.7657339966903298,
+      "final_annealing_lambda": 5.0,
+      "final_target_angle_degrees": 48.84715966046867,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5430.19,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1375,
+        "training_images": 7558,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "sphereface",
+      "stage": "View 2",
+      "run_number": 3,
+      "held_out_folds": [
+        5,
+        6
+      ],
+      "margin": 3,
+      "annealing": true,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "iterations": 3630,
+      "training_seconds": 4918.8,
+      "validation_seconds": 0,
+      "final_train_loss": 1.6449889496338268,
+      "final_annealing_lambda": 5.0,
+      "final_target_angle_degrees": 48.26573606759064,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5448.2,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1374,
+        "training_images": 7770,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "sphereface",
+      "stage": "View 2",
+      "run_number": 4,
+      "held_out_folds": [
+        7,
+        8
+      ],
+      "margin": 3,
+      "annealing": true,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "iterations": 3300,
+      "training_seconds": 4569.3,
+      "validation_seconds": 0,
+      "final_train_loss": 1.6157476035031406,
+      "final_annealing_lambda": 5.0,
+      "final_target_angle_degrees": 49.18006349043413,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5448.22,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1311,
+        "training_images": 7081,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "sphereface",
+      "stage": "View 2",
+      "run_number": 5,
+      "held_out_folds": [
+        9,
+        10
+      ],
+      "margin": 3,
+      "annealing": true,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "iterations": 3270,
+      "training_seconds": 4551.8,
+      "validation_seconds": 0,
+      "final_train_loss": 1.695108740701588,
+      "final_annealing_lambda": 5.0,
+      "final_target_angle_degrees": 49.798559591310834,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5454.23,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1324,
+        "training_images": 7007,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    }
+  ],
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.13.0",
+    "python_platform": "macOS-26.3.1-arm64-arm-64bit",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "peak_sampled_mps_driver_mib": 5454.23,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "software": {
+    "python": "3.12.16",
+    "torch": "2.13.0",
+    "torchvision": "0.28.0",
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1",
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "git_commit": null,
+    "git_uncommitted_changes": false
+  }
+}

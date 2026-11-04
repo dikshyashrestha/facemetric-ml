@@ -1,0 +1,83 @@
+{
+  "model": "SphereFace (A-Softmax)",
+  "variant": "m1_baseline",
+  "lfw_protocol": "unrestricted, labeled outside data",
+  "stage": "View 1",
+  "run_number": null,
+  "held_out_folds": [],
+  "fold_scheme": null,
+  "seed": 42,
+  "backbone": "Common.base_model.FaceEmbeddingNet (modified ResNet-18, random init)",
+  "embedding_dim": 512,
+  "trainable_parameters": 12039744,
+  "loss": {
+    "name": "A-Softmax (Liu et al., 2017)",
+    "classifier": "normalized weights ||w_j|| = 1, zero bias, logits = ||x|| cos(theta_j)",
+    "margin_m": 1,
+    "psi": "(-1)^k cos(m theta) - 2k, k = floor(m theta / pi); cos(m theta) by Chebyshev polynomial",
+    "target_logit": "||x|| (lambda cos(theta_y) + psi(theta_y)) / (1 + lambda)",
+    "annealing": true,
+    "annealing_schedule": "lambda = max(5.0, 1000.0 * (1 + 0.12 * iteration) ^ -1.0), updated every batch",
+    "numerical_stability": "cos clamped to [-1+1e-7, 1-1e-7] before acos"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ]
+  },
+  "lr_schedule": {
+    "name": "CosineAnnealingLR",
+    "T_max_epochs": 30,
+    "eta_min": 0.0,
+    "step": "once per epoch"
+  },
+  "batch_size": 64,
+  "batches_per_epoch": 104,
+  "max_epochs": 30,
+  "sampling": "uniform shuffle of all training images each epoch, last partial batch dropped",
+  "training_data": {
+    "classes": 1184,
+    "training_images": 6671,
+    "min_images_per_class": 2,
+    "evaluation_identity_overlap": 0
+  },
+  "augmentation": "random horizontal flip p=0.5",
+  "normalization": "RGB 112x112, (pixel - 127.5) / 128",
+  "test_time_features": "original + flipped embeddings summed, then L2-normalized; pairs scored by cosine similarity",
+  "validation": "View 1 pairsDevTest (1,000 pairs): accuracy at the best threshold on those pairs (tuning metric, optimistic) and ROC-AUC",
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.13.0",
+    "python_platform": "macOS-26.3.1-arm64-arm-64bit",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "software": {
+    "python": "3.12.16",
+    "torch": "2.13.0",
+    "torchvision": "0.28.0",
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1",
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "git_commit": null,
+    "git_uncommitted_changes": false
+  },
+  "settings_key": {
+    "variant": "m1_baseline",
+    "margin": 1,
+    "annealing": true,
+    "learning_rate": 0.0001,
+    "epochs": 30,
+    "stage": "view1",
+    "held_out_folds": [],
+    "seed": 42,
+    "batch_size": 64,
+    "smoke_test": false
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "variant": "center_loss",
+  "stage": "View 2",
+  "run_number": 1,
+  "held_out_folds": [
+    1,
+    2
+  ],
+  "lambda": 0.01,
+  "learning_rate": 0.0001,
+  "seed": 42,
+  "epochs_completed": 30,
+  "training_seconds": 4702.0,
+  "validation_seconds": 0,
+  "final_train_loss": 2.761630307256648,
+  "final_classification_loss": 2.1609890977893254,
+  "final_center_loss": 60.06412171895525,
+  "final_intra_class_distance": 10.859157494739094,
+  "final_inter_center_distance": 23.649473190307617,
+  "final_validation_accuracy": null,
+  "final_validation_auc": null,
+  "best_validation_accuracy": null,
+  "best_validation_epoch": null,
+  "peak_sampled_mps_driver_mib": 5422.23,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "training_data": {
+    "classes": 1336,
+    "training_images": 7240,
+    "min_images_per_class": 2,
+    "evaluation_identity_overlap": 0
+  },
+  "device": "mps"
+}
