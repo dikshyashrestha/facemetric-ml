@@ -1,0 +1,62 @@
+{
+  "model": "ArcFace",
+  "scale": 30,
+  "margin": 0.2,
+  "learning_rate": 0.0003,
+  "stage": "view1",
+  "run_number": null,
+  "held_out_folds": [],
+  "seed": 42,
+  "settings_key": {
+    "stage": "view1",
+    "scale": 30,
+    "margin": 0.2,
+    "lr": 0.0003,
+    "epochs": 30,
+    "scheduler_tmax": 30,
+    "seed": 42,
+    "held_out": [],
+    "P": 8,
+    "K": 4,
+    "steps": 138,
+    "weight_decay": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "run_number": null,
+    "smoke": false,
+    "class_count": 1184,
+    "plateau": {
+      "minimum_epochs": 10,
+      "patience": 6,
+      "minimum_accuracy_improvement": 0.002
+    }
+  },
+  "view1_plateau": {
+    "reached": false,
+    "last_meaningful_improvement_epoch": 28,
+    "epochs_without_improvement": 2,
+    "minimum_epochs": 10,
+    "patience": 6,
+    "minimum_accuracy_improvement": 0.002
+  },
+  "max_epoch_budget": 30,
+  "epochs_completed": 30,
+  "optimizer_updates": 4140,
+  "training_seconds": 1422.244,
+  "validation_seconds": 430.5,
+  "final_train_loss": 8.529336918955265,
+  "final_validation_accuracy": 0.679,
+  "final_validation_auc": 0.7418279999999999,
+  "best_validation_accuracy": 0.683,
+  "best_validation_epoch": 28,
+  "peak_sampled_mps_driver_mib": null,
+  "training_data": {
+    "eligible_identity_classes": 1184,
+    "eligible_training_images": 6671,
+    "excluded_singleton_identities": 2854,
+    "held_out_identity_overlap": 0
+  },
+  "device": "cuda"
+}

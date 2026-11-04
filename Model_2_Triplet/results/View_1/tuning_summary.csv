@@ -1,0 +1,13 @@
+variant,margin,learning_rate,epochs,max_epoch_budget,view1_plateau_reached,final_validation_accuracy,final_validation_auc,best_validation_accuracy,best_validation_epoch,training_seconds,run_folder,rank_within_variant
+batch_hard,0.3,0.0001,30,30,False,0.82,0.8819600000000001,0.824,28,3175.956,margin_0.3_lr_0.0001,1
+batch_hard,0.2,0.0001,30,30,False,0.818,0.8854959999999998,0.82,27,3206.645,margin_0.2_lr_0.0001,2
+batch_hard,0.1,0.0001,30,30,False,0.81,0.8884119999999999,0.814,29,3194.642,margin_0.1_lr_0.0001,3
+batch_hard,0.2,0.0003,30,30,False,0.767,0.84264,0.767,30,3157.391,margin_0.2_lr_0.0003,4
+batch_hard,0.3,0.0003,30,30,False,0.76,0.822956,0.76,30,3136.825,margin_0.3_lr_0.0003,5
+batch_hard,0.1,0.0003,30,30,False,0.756,0.825412,0.76,29,3152.52,margin_0.1_lr_0.0003,6
+semi_hard,0.2,0.0001,30,30,False,0.841,0.916648,0.842,26,3432.511,margin_0.2_lr_0.0001,1
+semi_hard,0.1,0.0001,30,30,False,0.826,0.900124,0.826,30,3369.812,margin_0.1_lr_0.0001,2
+semi_hard,0.3,0.0001,29,30,True,0.822,0.9015600000000001,0.831,26,3571.047,margin_0.3_lr_0.0001,3
+semi_hard,0.2,0.0003,30,30,False,0.777,0.85372,0.777,30,3692.558,margin_0.2_lr_0.0003,4
+semi_hard,0.3,0.0003,30,30,False,0.775,0.841848,0.775,30,3569.392,margin_0.3_lr_0.0003,5
+semi_hard,0.1,0.0003,30,30,False,0.75,0.8263719999999999,0.755,27,3580.715,margin_0.1_lr_0.0003,6

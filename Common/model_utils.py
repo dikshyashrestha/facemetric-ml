@@ -1,5 +1,4 @@
-"""Shared reproducibility, device, runtime and memory helpers.
-"""
+## Utility helpers for devices, seeding, and timing.
 
 from __future__ import annotations
 
@@ -14,7 +13,7 @@ import torch
 
 
 def get_device() -> torch.device:
-    """Prefer Apple MPS on the user's M1 Pro; otherwise CUDA, then CPU."""
+    ## Pick the fastest available device for the current machine.
     if torch.backends.mps.is_available():
         return torch.device("mps")
     if torch.cuda.is_available():
@@ -23,11 +22,7 @@ def get_device() -> torch.device:
 
 
 def seed_everything(seed: int = 42, deterministic: bool = False) -> None:
-    """Seed Python, NumPy and PyTorch, including relevant accelerator backends.
-
-    Note: fixed seeds improve reproducibility but do not guarantee identical
-    results on every device, PyTorch release, or MPS operation.
-    """
+    ## Seed Python, NumPy, and PyTorch for repeatable runs.
     if seed < 0:
         raise ValueError("seed must be nonnegative")
     random.seed(seed)
@@ -45,7 +40,7 @@ def seed_everything(seed: int = 42, deterministic: bool = False) -> None:
 
 
 def synchronize_device(device: torch.device | str) -> None:
-    """Wait for queued accelerator work before measuring elapsed training time."""
+    ## Sync the device before timing or measuring memory.
     device = torch.device(device)
     if device.type == "mps" and torch.backends.mps.is_available():
         torch.mps.synchronize()
@@ -54,7 +49,7 @@ def synchronize_device(device: torch.device | str) -> None:
 
 
 def hardware_info(device: torch.device | str | None = None) -> dict:
-    """Description to include in the experimental log/report."""
+    ## Return a short description of the current hardware setup.
     device = torch.device(device) if device is not None else get_device()
     info = {
         "device": str(device),
@@ -74,17 +69,7 @@ def hardware_info(device: torch.device | str | None = None) -> dict:
 
 
 class TrainingMonitor:
-    """Record elapsed time and available accelerator-memory statistics.
-
-    Usage: monitor = TrainingMonitor(device); monitor.start(); ...
-           monitor.sample_memory() during training; monitor.stop()
-           monitor.report() after training.
-
-    On MPS, PyTorch exposes current/driver-allocated memory, not a portable
-    peak-memory counter. Peak MPS memory here is the maximum SAMPLED value;
-    call sample_memory() after each batch for a more informative estimate.
-    On CUDA, PyTorch provides a true peak allocated-memory statistic.
-    """
+    ## Track elapsed time and a few basic memory stats.
 
     def __init__(self, device: torch.device | str):
         self.device = torch.device(device)
@@ -148,7 +133,7 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
 
 
 def save_json(path: str | Path, data: dict) -> None:
-    """Save hardware info, hyperparameters, metrics, etc. in human-readable JSON."""
+    ## Save a dictionary as formatted JSON.
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=str) + "\n", encoding="utf-8")

@@ -1,0 +1,397 @@
+{
+  "model": "Triplet Loss",
+  "mining": "semi_hard",
+  "seed": 42,
+  "training_runs": 5,
+  "evaluated_folds": 10,
+  "held_out_pairs": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      7,
+      8
+    ],
+    [
+      9,
+      10
+    ]
+  ],
+  "fold_to_run": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 4,
+    "8": 4,
+    "9": 5,
+    "10": 5
+  },
+  "selection_from_view1": {
+    "variant": "semi_hard",
+    "margin": "0.2",
+    "learning_rate": "0.0001",
+    "epochs": "30",
+    "max_epoch_budget": "30",
+    "view1_plateau_reached": "False",
+    "final_validation_accuracy": "0.841",
+    "final_validation_auc": "0.916648",
+    "best_validation_accuracy": "0.842",
+    "best_validation_epoch": "26",
+    "training_seconds": "3432.511",
+    "run_folder": "margin_0.2_lr_0.0001",
+    "rank_within_variant": "1"
+  },
+  "frozen_hyperparameters": {
+    "margin": 0.2,
+    "learning_rate": 0.0001,
+    "epochs": 30
+  },
+  "cosine": {
+    "accuracy_mean": 0.8646666666666667,
+    "accuracy_std": 0.016155112327711843,
+    "auc": 0.9364608888888889,
+    "eer": 0.13433333333333333,
+    "tar_at_far_0.01": 0.428
+  },
+  "squared_l2": {
+    "accuracy_mean": 0.8646666666666667,
+    "accuracy_std": 0.016155112327711843,
+    "auc": 0.9364608888888889,
+    "eer": 0.13433333333333333,
+    "tar_at_far_0.01": 0.428
+  },
+  "max_abs_squared_l2_minus_2_minus_2cos": 4.76837158203125e-07,
+  "training_total_seconds": 35869.416,
+  "training_mean_seconds": 7173.883200000001,
+  "epochs_per_run": [
+    30,
+    30,
+    30,
+    30,
+    30
+  ],
+  "peak_sampled_mps_driver_mib": 5448.08,
+  "memory_note": "MPS value sampled once per batch, not guaranteed hardware peak",
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.14.0",
+    "python_platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "software": {
+    "python": "3.13.9",
+    "torch": "2.14.0",
+    "torchvision": "0.29.0",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "git_commit": "c55f7aaffbc14f2222f12fd7dd8550daf345454e"
+  },
+  "runs": [
+    {
+      "variant": "semi_hard",
+      "margin": 0.2,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "held_out_folds": [
+        1,
+        2
+      ],
+      "seed": 42,
+      "settings_key": {
+        "method": "semi_hard",
+        "margin": 0.2,
+        "lr": 0.0001,
+        "epochs": 30,
+        "seed": 42,
+        "stage": "view2",
+        "held_out": [
+          1,
+          2
+        ],
+        "P": 8,
+        "K": 4,
+        "extra_singletons": 4,
+        "steps_per_epoch": 300,
+        "smoke": false,
+        "weight_decay": 0.0005,
+        "adamw_betas": [
+          0.9,
+          0.999
+        ],
+        "plateau_rule": null
+      },
+      "max_epoch_budget": 30,
+      "view1_plateau": null,
+      "epochs_completed": 30,
+      "optimizer_updates": 8842,
+      "training_seconds": 7152.902,
+      "validation_seconds": 0,
+      "final_train_loss": 0.0901017678094407,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5440.08,
+      "peak_gpu_allocated_mib": null,
+      "training_data": {
+        "training_images": 10497,
+        "training_identities": 4593,
+        "multi_image_identities": 1336,
+        "singleton_identities": 3257,
+        "held_out_identity_overlap": 0
+      },
+      "device": "mps",
+      "saved_weights": "saved_models/semi_hard/run_1.pt"
+    },
+    {
+      "variant": "semi_hard",
+      "margin": 0.2,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "held_out_folds": [
+        3,
+        4
+      ],
+      "seed": 42,
+      "settings_key": {
+        "method": "semi_hard",
+        "margin": 0.2,
+        "lr": 0.0001,
+        "epochs": 30,
+        "seed": 42,
+        "stage": "view2",
+        "held_out": [
+          3,
+          4
+        ],
+        "P": 8,
+        "K": 4,
+        "extra_singletons": 4,
+        "steps_per_epoch": 300,
+        "smoke": false,
+        "weight_decay": 0.0005,
+        "adamw_betas": [
+          0.9,
+          0.999
+        ],
+        "plateau_rule": null
+      },
+      "max_epoch_budget": 30,
+      "view1_plateau": null,
+      "epochs_completed": 30,
+      "optimizer_updates": 8884,
+      "training_seconds": 7170.838,
+      "validation_seconds": 0,
+      "final_train_loss": 0.08789583889767527,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5448.08,
+      "peak_gpu_allocated_mib": null,
+      "training_data": {
+        "training_images": 10820,
+        "training_identities": 4637,
+        "multi_image_identities": 1375,
+        "singleton_identities": 3262,
+        "held_out_identity_overlap": 0
+      },
+      "device": "mps",
+      "saved_weights": "saved_models/semi_hard/run_2.pt"
+    },
+    {
+      "variant": "semi_hard",
+      "margin": 0.2,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "held_out_folds": [
+        5,
+        6
+      ],
+      "seed": 42,
+      "settings_key": {
+        "method": "semi_hard",
+        "margin": 0.2,
+        "lr": 0.0001,
+        "epochs": 30,
+        "seed": 42,
+        "stage": "view2",
+        "held_out": [
+          5,
+          6
+        ],
+        "P": 8,
+        "K": 4,
+        "extra_singletons": 4,
+        "steps_per_epoch": 300,
+        "smoke": false,
+        "weight_decay": 0.0005,
+        "adamw_betas": [
+          0.9,
+          0.999
+        ],
+        "plateau_rule": null
+      },
+      "max_epoch_budget": 30,
+      "view1_plateau": null,
+      "epochs_completed": 30,
+      "optimizer_updates": 8860,
+      "training_seconds": 7150.143,
+      "validation_seconds": 0,
+      "final_train_loss": 0.08809055971602599,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5448.08,
+      "peak_gpu_allocated_mib": null,
+      "training_data": {
+        "training_images": 11051,
+        "training_identities": 4655,
+        "multi_image_identities": 1374,
+        "singleton_identities": 3281,
+        "held_out_identity_overlap": 0
+      },
+      "device": "mps",
+      "saved_weights": "saved_models/semi_hard/run_3.pt"
+    },
+    {
+      "variant": "semi_hard",
+      "margin": 0.2,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "held_out_folds": [
+        7,
+        8
+      ],
+      "seed": 42,
+      "settings_key": {
+        "method": "semi_hard",
+        "margin": 0.2,
+        "lr": 0.0001,
+        "epochs": 30,
+        "seed": 42,
+        "stage": "view2",
+        "held_out": [
+          7,
+          8
+        ],
+        "P": 8,
+        "K": 4,
+        "extra_singletons": 4,
+        "steps_per_epoch": 300,
+        "smoke": false,
+        "weight_decay": 0.0005,
+        "adamw_betas": [
+          0.9,
+          0.999
+        ],
+        "plateau_rule": null
+      },
+      "max_epoch_budget": 30,
+      "view1_plateau": null,
+      "epochs_completed": 30,
+      "optimizer_updates": 8858,
+      "training_seconds": 7157.182,
+      "validation_seconds": 0,
+      "final_train_loss": 0.08577407375598947,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5448.08,
+      "peak_gpu_allocated_mib": null,
+      "training_data": {
+        "training_images": 10321,
+        "training_identities": 4551,
+        "multi_image_identities": 1311,
+        "singleton_identities": 3240,
+        "held_out_identity_overlap": 0
+      },
+      "device": "mps",
+      "saved_weights": "saved_models/semi_hard/run_4.pt"
+    },
+    {
+      "variant": "semi_hard",
+      "margin": 0.2,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "held_out_folds": [
+        9,
+        10
+      ],
+      "seed": 42,
+      "settings_key": {
+        "method": "semi_hard",
+        "margin": 0.2,
+        "lr": 0.0001,
+        "epochs": 30,
+        "seed": 42,
+        "stage": "view2",
+        "held_out": [
+          9,
+          10
+        ],
+        "P": 8,
+        "K": 4,
+        "extra_singletons": 4,
+        "steps_per_epoch": 300,
+        "smoke": false,
+        "weight_decay": 0.0005,
+        "adamw_betas": [
+          0.9,
+          0.999
+        ],
+        "plateau_rule": null
+      },
+      "max_epoch_budget": 30,
+      "view1_plateau": null,
+      "epochs_completed": 30,
+      "optimizer_updates": 8878,
+      "training_seconds": 7238.351,
+      "validation_seconds": 0,
+      "final_train_loss": 0.08959486411263545,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5448.08,
+      "peak_gpu_allocated_mib": null,
+      "training_data": {
+        "training_images": 10243,
+        "training_identities": 4560,
+        "multi_image_identities": 1324,
+        "singleton_identities": 3236,
+        "held_out_identity_overlap": 0
+      },
+      "device": "mps",
+      "saved_weights": "saved_models/semi_hard/run_5.pt"
+    }
+  ],
+  "files": [
+    "pair_scores.csv",
+    "pair_scores_squared_l2.csv",
+    "fold_accuracy.csv",
+    "fold_accuracy_squared_l2.csv",
+    "roc_data.csv",
+    "roc.png",
+    "score_histogram.png",
+    "confident_errors.csv"
+  ]
+}

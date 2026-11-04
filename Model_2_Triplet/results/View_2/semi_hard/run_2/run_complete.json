@@ -1,0 +1,56 @@
+{
+  "variant": "semi_hard",
+  "margin": 0.2,
+  "learning_rate": 0.0001,
+  "stage": "view2",
+  "held_out_folds": [
+    3,
+    4
+  ],
+  "seed": 42,
+  "settings_key": {
+    "method": "semi_hard",
+    "margin": 0.2,
+    "lr": 0.0001,
+    "epochs": 30,
+    "seed": 42,
+    "stage": "view2",
+    "held_out": [
+      3,
+      4
+    ],
+    "P": 8,
+    "K": 4,
+    "extra_singletons": 4,
+    "steps_per_epoch": 300,
+    "smoke": false,
+    "weight_decay": 0.0005,
+    "adamw_betas": [
+      0.9,
+      0.999
+    ],
+    "plateau_rule": null
+  },
+  "max_epoch_budget": 30,
+  "view1_plateau": null,
+  "epochs_completed": 30,
+  "optimizer_updates": 8884,
+  "training_seconds": 7170.838,
+  "validation_seconds": 0,
+  "final_train_loss": 0.08789583889767527,
+  "final_validation_accuracy": null,
+  "final_validation_auc": null,
+  "best_validation_accuracy": null,
+  "best_validation_epoch": null,
+  "peak_sampled_mps_driver_mib": 5448.08,
+  "peak_gpu_allocated_mib": null,
+  "training_data": {
+    "training_images": 10820,
+    "training_identities": 4637,
+    "multi_image_identities": 1375,
+    "singleton_identities": 3262,
+    "held_out_identity_overlap": 0
+  },
+  "device": "mps",
+  "saved_weights": "saved_models/semi_hard/run_2.pt"
+}

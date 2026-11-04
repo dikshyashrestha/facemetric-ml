@@ -1,0 +1,412 @@
+{
+  "model": "ArcFace",
+  "protocol": "unrestricted, labeled outside data",
+  "seed": 42,
+  "seed_note": "one final seed (42); additional seeds if compute permits",
+  "training_runs": 5,
+  "evaluated_folds": 10,
+  "heldout_scheme": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      7,
+      8
+    ],
+    [
+      9,
+      10
+    ]
+  ],
+  "fold_to_run": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 4,
+    "8": 4,
+    "9": 5,
+    "10": 5
+  },
+  "selected_from_view1": {
+    "scale": 30.0,
+    "margin": 0.3,
+    "learning_rate": 0.0001,
+    "epochs": 28,
+    "view1_selection": {
+      "phase": "grid",
+      "scale": 30,
+      "margin": 0.3,
+      "learning_rate": 0.0001,
+      "epochs": 28,
+      "max_epoch_budget": 30,
+      "view1_plateau_reached": true,
+      "final_validation_accuracy": 0.684,
+      "final_validation_auc": 0.7486119999999999,
+      "best_validation_accuracy": 0.686,
+      "best_validation_epoch": 22,
+      "final_train_loss": 8.060192899427552,
+      "training_seconds": 1332.625,
+      "run_folder": "View_1/grid/s_30_m_0.3_lr_0.0001",
+      "rank_within_grid": 1
+    },
+    "view1_m0_ablation": {
+      "validation_accuracy": 0.686,
+      "validation_auc": 0.744076,
+      "epochs": 30
+    }
+  },
+  "cosine": {
+    "accuracy_mean": 0.7176666666666667,
+    "accuracy_std": 0.018073922282301275,
+    "auc": 0.7883129444444444,
+    "eer": 0.2843333333333333,
+    "tar_at_far_0.01": 0.18066666666666667
+  },
+  "training_total_seconds": 15128.931,
+  "training_mean_seconds": 3025.7862,
+  "epochs_per_run": [
+    28,
+    28,
+    28,
+    28,
+    28
+  ],
+  "peak_sampled_mps_driver_mib": null,
+  "peak_gpu_allocated_mib": 2051.72,
+  "memory_note": "MPS value sampled after each batch; not guaranteed true peak",
+  "hardware": {
+    "device": "cuda",
+    "pytorch_version": "2.11.0+cu128",
+    "python_platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+    "processor_architecture": "x86_64",
+    "mps_available": false,
+    "cuda_available": true,
+    "accelerator_name": "Tesla T4"
+  },
+  "software": {
+    "python": "3.13.15",
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "numpy": "2.1.3",
+    "sklearn": "1.6.1",
+    "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+    "git_commit": null
+  },
+  "runs": [
+    {
+      "model": "ArcFace",
+      "scale": 30.0,
+      "margin": 0.3,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "run_number": 1,
+      "held_out_folds": [
+        1,
+        2
+      ],
+      "seed": 42,
+      "settings_key": {
+        "stage": "view2",
+        "scale": 30.0,
+        "margin": 0.3,
+        "lr": 0.0001,
+        "epochs": 28,
+        "scheduler_tmax": 30,
+        "seed": 42,
+        "held_out": [
+          1,
+          2
+        ],
+        "P": 8,
+        "K": 4,
+        "steps": 300,
+        "weight_decay": 0.0005,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "run_number": 1,
+        "smoke": false,
+        "class_count": 1336,
+        "plateau": null
+      },
+      "view1_plateau": null,
+      "max_epoch_budget": 28,
+      "epochs_completed": 28,
+      "optimizer_updates": 8400,
+      "training_seconds": 3024.156,
+      "validation_seconds": 0,
+      "final_train_loss": 3.397560580174128,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": null,
+      "peak_gpu_allocated_mib": 2049.28,
+      "training_data": {
+        "eligible_identity_classes": 1336,
+        "eligible_training_images": 7240,
+        "excluded_singleton_identities": 3257,
+        "held_out_identity_overlap": 0
+      },
+      "device": "cuda",
+      "saved_weights": "saved_models/run_1.pt"
+    },
+    {
+      "model": "ArcFace",
+      "scale": 30.0,
+      "margin": 0.3,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "run_number": 2,
+      "held_out_folds": [
+        3,
+        4
+      ],
+      "seed": 42,
+      "settings_key": {
+        "stage": "view2",
+        "scale": 30.0,
+        "margin": 0.3,
+        "lr": 0.0001,
+        "epochs": 28,
+        "scheduler_tmax": 30,
+        "seed": 42,
+        "held_out": [
+          3,
+          4
+        ],
+        "P": 8,
+        "K": 4,
+        "steps": 300,
+        "weight_decay": 0.0005,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "run_number": 2,
+        "smoke": false,
+        "class_count": 1375,
+        "plateau": null
+      },
+      "view1_plateau": null,
+      "max_epoch_budget": 28,
+      "epochs_completed": 28,
+      "optimizer_updates": 8400,
+      "training_seconds": 3037.137,
+      "validation_seconds": 0,
+      "final_train_loss": 3.4498676759004594,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": null,
+      "peak_gpu_allocated_mib": 2051.72,
+      "training_data": {
+        "eligible_identity_classes": 1375,
+        "eligible_training_images": 7558,
+        "excluded_singleton_identities": 3262,
+        "held_out_identity_overlap": 0
+      },
+      "device": "cuda",
+      "saved_weights": "saved_models/run_2.pt"
+    },
+    {
+      "model": "ArcFace",
+      "scale": 30.0,
+      "margin": 0.3,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "run_number": 3,
+      "held_out_folds": [
+        5,
+        6
+      ],
+      "seed": 42,
+      "settings_key": {
+        "stage": "view2",
+        "scale": 30.0,
+        "margin": 0.3,
+        "lr": 0.0001,
+        "epochs": 28,
+        "scheduler_tmax": 30,
+        "seed": 42,
+        "held_out": [
+          5,
+          6
+        ],
+        "P": 8,
+        "K": 4,
+        "steps": 300,
+        "weight_decay": 0.0005,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "run_number": 3,
+        "smoke": false,
+        "class_count": 1374,
+        "plateau": null
+      },
+      "view1_plateau": null,
+      "max_epoch_budget": 28,
+      "epochs_completed": 28,
+      "optimizer_updates": 8400,
+      "training_seconds": 3022.535,
+      "validation_seconds": 0,
+      "final_train_loss": 3.882188310623169,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": null,
+      "peak_gpu_allocated_mib": 2051.72,
+      "training_data": {
+        "eligible_identity_classes": 1374,
+        "eligible_training_images": 7770,
+        "excluded_singleton_identities": 3281,
+        "held_out_identity_overlap": 0
+      },
+      "device": "cuda",
+      "saved_weights": "saved_models/run_3.pt"
+    },
+    {
+      "model": "ArcFace",
+      "scale": 30.0,
+      "margin": 0.3,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "run_number": 4,
+      "held_out_folds": [
+        7,
+        8
+      ],
+      "seed": 42,
+      "settings_key": {
+        "stage": "view2",
+        "scale": 30.0,
+        "margin": 0.3,
+        "lr": 0.0001,
+        "epochs": 28,
+        "scheduler_tmax": 30,
+        "seed": 42,
+        "held_out": [
+          7,
+          8
+        ],
+        "P": 8,
+        "K": 4,
+        "steps": 300,
+        "weight_decay": 0.0005,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "run_number": 4,
+        "smoke": false,
+        "class_count": 1311,
+        "plateau": null
+      },
+      "view1_plateau": null,
+      "max_epoch_budget": 28,
+      "epochs_completed": 28,
+      "optimizer_updates": 8400,
+      "training_seconds": 3021.664,
+      "validation_seconds": 0,
+      "final_train_loss": 3.1957635724544526,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": null,
+      "peak_gpu_allocated_mib": 2050.52,
+      "training_data": {
+        "eligible_identity_classes": 1311,
+        "eligible_training_images": 7081,
+        "excluded_singleton_identities": 3240,
+        "held_out_identity_overlap": 0
+      },
+      "device": "cuda",
+      "saved_weights": "saved_models/run_4.pt"
+    },
+    {
+      "model": "ArcFace",
+      "scale": 30.0,
+      "margin": 0.3,
+      "learning_rate": 0.0001,
+      "stage": "view2",
+      "run_number": 5,
+      "held_out_folds": [
+        9,
+        10
+      ],
+      "seed": 42,
+      "settings_key": {
+        "stage": "view2",
+        "scale": 30.0,
+        "margin": 0.3,
+        "lr": 0.0001,
+        "epochs": 28,
+        "scheduler_tmax": 30,
+        "seed": 42,
+        "held_out": [
+          9,
+          10
+        ],
+        "P": 8,
+        "K": 4,
+        "steps": 300,
+        "weight_decay": 0.0005,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "run_number": 5,
+        "smoke": false,
+        "class_count": 1324,
+        "plateau": null
+      },
+      "view1_plateau": null,
+      "max_epoch_budget": 28,
+      "epochs_completed": 28,
+      "optimizer_updates": 8400,
+      "training_seconds": 3023.439,
+      "validation_seconds": 0,
+      "final_train_loss": 3.066196530858676,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": null,
+      "peak_gpu_allocated_mib": 2051.62,
+      "training_data": {
+        "eligible_identity_classes": 1324,
+        "eligible_training_images": 7007,
+        "excluded_singleton_identities": 3236,
+        "held_out_identity_overlap": 0
+      },
+      "device": "cuda",
+      "saved_weights": "saved_models/run_5.pt"
+    }
+  ],
+  "files": [
+    "pair_scores.csv",
+    "fold_accuracy.csv",
+    "roc_data.csv",
+    "roc.png",
+    "score_histogram.png",
+    "confident_errors.csv"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "variant": "batch_hard",
+  "margin": 0.1,
+  "learning_rate": 0.0001,
+  "stage": "view1",
+  "held_out_folds": [],
+  "seed": 42,
+  "settings_key": {
+    "method": "batch_hard",
+    "margin": 0.1,
+    "lr": 0.0001,
+    "epochs": 30,
+    "seed": 42,
+    "stage": "view1",
+    "held_out": [],
+    "P": 8,
+    "K": 4,
+    "extra_singletons": 4,
+    "steps_per_epoch": 138,
+    "smoke": false,
+    "weight_decay": 0.0005,
+    "adamw_betas": [
+      0.9,
+      0.999
+    ],
+    "plateau_rule": {
+      "min_epochs": 10,
+      "patience": 6,
+      "min_improvement": 0.002
+    }
+  },
+  "max_epoch_budget": 30,
+  "view1_plateau": {
+    "reached": false,
+    "last_meaningful_improvement_epoch": 29,
+    "epochs_without_improvement": 1,
+    "minimum_epochs": 10,
+    "patience": 6,
+    "min_accuracy_improvement": 0.002
+  },
+  "epochs_completed": 30,
+  "optimizer_updates": 4140,
+  "training_seconds": 3194.642,
+  "validation_seconds": 616.48,
+  "final_train_loss": 0.10835533250676657,
+  "final_validation_accuracy": 0.81,
+  "final_validation_auc": 0.8884119999999999,
+  "best_validation_accuracy": 0.814,
+  "best_validation_epoch": 29,
+  "peak_sampled_mps_driver_mib": 3400.08,
+  "training_data": {
+    "training_images": 9525,
+    "training_identities": 4038,
+    "multi_image_identities": 1184,
+    "singleton_identities": 2854,
+    "held_out_identity_overlap": 0
+  },
+  "device": "mps"
+}

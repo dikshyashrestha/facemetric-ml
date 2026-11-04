@@ -1,0 +1,91 @@
+{
+  "model": "ArcFace: additive angular-margin softmax",
+  "stage": "view1",
+  "lfw_protocol": "unrestricted, labeled outside data",
+  "run_number": null,
+  "held_out_folds": [],
+  "view2_scheme": "five models; each holds out consecutive two folds",
+  "backbone": "Common.base_model.FaceEmbeddingNet, random modified ResNet-18, 512-D",
+  "trainable_parameters": 12039744,
+  "head": {
+    "embedding_dim": 512,
+    "classes": 1184,
+    "scale": 16,
+    "angular_margin_radians": 0.2,
+    "formula": "s*cos(theta_y+m) for target, s*cos(theta_j) otherwise",
+    "stable_fallback": "if cos(theta_y)<cos(pi-m): cos(theta_y)-m*sin(m)"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ]
+  },
+  "lr_scheduler": {
+    "name": "CosineAnnealingLR",
+    "T_max_epochs": 30
+  },
+  "batch": {
+    "P": 8,
+    "K": 4,
+    "images_per_step": 32,
+    "steps_per_epoch": 138,
+    "sampling": "uniform eligible identities, without replacement; images unique then replacement"
+  },
+  "augmentation": "training horizontal flip; 112x112 RGB; (pixel-127.5)/128",
+  "test_time_embedding": "original plus horizontal flip, then L2 normalization",
+  "validation": "View 1: 1000 development pairs, best-on-same-pairs threshold for tuning only",
+  "training_data": {
+    "eligible_identity_classes": 1184,
+    "eligible_training_images": 6671,
+    "excluded_singleton_identities": 2854,
+    "held_out_identity_overlap": 0
+  },
+  "hardware": {
+    "device": "cuda",
+    "pytorch_version": "2.11.0+cu130",
+    "python_platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+    "processor_architecture": "x86_64",
+    "mps_available": false,
+    "cuda_available": true,
+    "accelerator_name": "Tesla T4"
+  },
+  "software": {
+    "python": "3.13.16",
+    "torch": "2.11.0+cu130",
+    "torchvision": "0.26.0+cu130",
+    "numpy": "2.1.3",
+    "sklearn": "1.6.1",
+    "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+    "git_commit": null
+  },
+  "settings_key": {
+    "stage": "view1",
+    "scale": 16,
+    "margin": 0.2,
+    "lr": 0.0003,
+    "epochs": 30,
+    "scheduler_tmax": 30,
+    "seed": 42,
+    "held_out": [],
+    "P": 8,
+    "K": 4,
+    "steps": 138,
+    "weight_decay": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "run_number": null,
+    "smoke": false,
+    "class_count": 1184,
+    "plateau": {
+      "minimum_epochs": 10,
+      "patience": 6,
+      "minimum_accuracy_improvement": 0.002
+    }
+  }
+}

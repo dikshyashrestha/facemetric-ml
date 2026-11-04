@@ -1,0 +1,91 @@
+{
+  "model": "Triplet Loss (FaceNet) with online mining",
+  "variant": "semi_hard",
+  "stage": "view1",
+  "run_number": null,
+  "held_out_folds": [],
+  "training_scheme": "View 1: peopleDevTrain; View 2: five runs, each holding out 2 folds",
+  "architecture": "Common.base_model.FaceEmbeddingNet, random ResNet-18, 512-D",
+  "trainable_parameters": 11433536,
+  "loss": "relu(||a-p||^2 - ||a-n||^2 + margin) on L2-normalized features",
+  "mining": {
+    "method": "semi_hard",
+    "margin": 0.2,
+    "valid_positive": "different image of same person",
+    "singleton_images": "negative only"
+  },
+  "sampling": {
+    "P": 8,
+    "K": 4,
+    "extra_singleton_negatives": 4,
+    "images_per_batch": 36,
+    "sampling_seed": "np.default_rng([SEED, epoch])"
+  },
+  "optimizer": {
+    "type": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ]
+  },
+  "scheduler": {
+    "type": "CosineAnnealingLR",
+    "epochs": 30
+  },
+  "epochs": 30,
+  "steps_per_epoch": 138,
+  "normalization": "112x112 RGB, (pixel-127.5)/128, random horizontal flip",
+  "test_time": "sum original+flipped features, L2 normalize",
+  "validation": "View 1: best threshold on 1000 dev pairs, AUC; optimistic tuning metric",
+  "training_data": {
+    "training_images": 9525,
+    "training_identities": 4038,
+    "multi_image_identities": 1184,
+    "singleton_identities": 2854,
+    "held_out_identity_overlap": 0
+  },
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.14.0",
+    "python_platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "software": {
+    "python": "3.13.9",
+    "torch": "2.14.0",
+    "torchvision": "0.29.0",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "git_commit": "c55f7aaffbc14f2222f12fd7dd8550daf345454e"
+  },
+  "settings_key": {
+    "method": "semi_hard",
+    "margin": 0.2,
+    "lr": 0.0001,
+    "epochs": 30,
+    "seed": 42,
+    "stage": "view1",
+    "held_out": [],
+    "P": 8,
+    "K": 4,
+    "extra_singletons": 4,
+    "steps_per_epoch": 138,
+    "smoke": false,
+    "weight_decay": 0.0005,
+    "adamw_betas": [
+      0.9,
+      0.999
+    ],
+    "plateau_rule": {
+      "min_epochs": 10,
+      "patience": 6,
+      "min_improvement": 0.002
+    }
+  }
+}

@@ -1,5 +1,4 @@
-"""Shared LFW face-verification evaluation for Applied Deep Learning Project 1.
-"""
+## Shared LFW evaluation helpers.
 
 import csv
 import json
@@ -14,11 +13,7 @@ from torch.utils.data import DataLoader
 
 @torch.inference_mode()
 def test_time_embeddings(model, images):
-    """Sum embeddings of each image and its horizontal flip; L2-normalize.
-
-    Assumes model is in evaluation mode. Input: [B, 3, 112, 112].
-    Output: [B, 512] unit-length embeddings.
-    """
+    ## Average original and flipped embeddings before L2-normalizing.
     original = model(images, normalize=False)
     flipped = model(torch.flip(images, dims=[-1]), normalize=False)
     return F.normalize(original + flipped, p=2, dim=1)
@@ -26,11 +21,7 @@ def test_time_embeddings(model, images):
 
 @torch.inference_mode()
 def score_pair_dataset(model, dataset, device, batch_size=32):
-    """Score a Common.LFWPairDataset without shuffling pair order.
-
-    Returns records containing fold, img1, img2, label, cosine 'score',
-    and 'squared_l2'. The dataset must expose .samples with matching rows.
-    """
+    ## Score a pair dataset in dataset order.
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     was_training = model.training
     model.eval()
@@ -66,11 +57,7 @@ def score_pair_dataset(model, dataset, device, batch_size=32):
 
 
 def select_accuracy_threshold(scores, labels):
-    """Choose a similarity threshold maximizing accuracy on known pairs.
-
-    Use *only* the other nine folds to select a View 2 test-fold threshold.
-    A pair is predicted 'same person' when its score >= threshold.
-    """
+    ## Choose the score threshold that maximizes pair accuracy.
     scores = np.asarray(scores, dtype=float)
     labels = np.asarray(labels, dtype=int)
     if len(scores) == 0 or len(scores) != len(labels):
@@ -84,21 +71,14 @@ def select_accuracy_threshold(scores, labels):
     accuracies = (tar * positives + (1 - far) * negatives) / len(labels)
     threshold = float(thresholds[np.argmax(accuracies)])
 
-    # An infinite ROC threshold means "predict everyone different".
-    # Replace it with a finite threshold greater than all observed scores.
+    # Fall back to a finite threshold if the ROC fit produced an infinite value.
     if np.isinf(threshold):
         threshold = float(np.nextafter(scores.max(), np.inf))
     return threshold
 
 
 def evaluate_view2(rows, score_key='score', higher_is_same=True):
-    """Evaluate 6,000 OUT-OF-FOLD View 2 scores in the official 10-fold way.
-
-    score_key='score' for cosine (larger = same person).
-    For squared distance use score_key='squared_l2', higher_is_same=False.
-    It is the training script's responsibility to ensure every scored fold
-    was held out from the model that produced its scores.
-    """
+    ## Evaluate View 2 scores using the standard 10-fold protocol.
     if len(rows) != 6000:
         raise ValueError('Expected exactly 6,000 held-out View 2 pair scores')
 
@@ -143,7 +123,7 @@ def evaluate_view2(rows, score_key='score', higher_is_same=True):
 
 
 def save_pair_scores(rows, filename, score_key='score'):
-    """Export the exact five columns required by the assignment."""
+    ## Export the standard pair score columns.
     path = Path(filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('w', encoding='utf-8', newline='') as f:
@@ -155,7 +135,7 @@ def save_pair_scores(rows, filename, score_key='score'):
 
 
 def save_evaluation_results(results, folder):
-    """Save per-fold accuracy and summary statistics."""
+    ## Write per-fold metrics and aggregate summaries.
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     with (folder / 'per_fold_accuracy.csv').open('w', encoding='utf-8', newline='') as f:
@@ -167,11 +147,7 @@ def save_evaluation_results(results, folder):
 
 
 def save_roc_plot(method_scores, filename):
-    """Plot ROC curves for all methods together (logarithmic FAR axis).
-
-    Input: {'method name': (similarity_scores, binary_pair_labels), ...}.
-    For squared Euclidean distances, pass NEGATIVE distances as scores.
-    """
+    ## Plot ROC curves for all methods in one figure.
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()

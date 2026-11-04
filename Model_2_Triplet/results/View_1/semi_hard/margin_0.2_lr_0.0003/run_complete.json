@@ -1,0 +1,59 @@
+{
+  "variant": "semi_hard",
+  "margin": 0.2,
+  "learning_rate": 0.0003,
+  "stage": "view1",
+  "held_out_folds": [],
+  "seed": 42,
+  "settings_key": {
+    "method": "semi_hard",
+    "margin": 0.2,
+    "lr": 0.0003,
+    "epochs": 30,
+    "seed": 42,
+    "stage": "view1",
+    "held_out": [],
+    "P": 8,
+    "K": 4,
+    "extra_singletons": 4,
+    "steps_per_epoch": 138,
+    "smoke": false,
+    "weight_decay": 0.0005,
+    "adamw_betas": [
+      0.9,
+      0.999
+    ],
+    "plateau_rule": {
+      "min_epochs": 10,
+      "patience": 6,
+      "min_improvement": 0.002
+    }
+  },
+  "max_epoch_budget": 30,
+  "view1_plateau": {
+    "reached": false,
+    "last_meaningful_improvement_epoch": 26,
+    "epochs_without_improvement": 4,
+    "minimum_epochs": 10,
+    "patience": 6,
+    "min_accuracy_improvement": 0.002
+  },
+  "epochs_completed": 30,
+  "optimizer_updates": 4140,
+  "training_seconds": 3692.558,
+  "validation_seconds": 660.58,
+  "final_train_loss": 0.12237142285575038,
+  "final_validation_accuracy": 0.777,
+  "final_validation_auc": 0.85372,
+  "best_validation_accuracy": 0.777,
+  "best_validation_epoch": 30,
+  "peak_sampled_mps_driver_mib": 3400.08,
+  "training_data": {
+    "training_images": 9525,
+    "training_identities": 4038,
+    "multi_image_identities": 1184,
+    "singleton_identities": 2854,
+    "held_out_identity_overlap": 0
+  },
+  "device": "mps"
+}

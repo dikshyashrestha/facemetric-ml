@@ -1,24 +1,5 @@
 
-"""
-Shared ResNet-18 Face Embedding Backbone
-
-Applied Deep Learning - Project 1
-
-Input:
-    RGB face image: [batch_size, 3, 112, 112]
-
-Output:
-    Face embedding: [batch_size, 512]
-
-Architecture:
-    Modified ResNet-18
-    -> BatchNorm1d
-    -> Dropout(0.4)
-    -> Fully Connected (512)
-    -> BatchNorm1d
-
-Shared across all five deep metric learning methods.
-"""
+## Shared ResNet-18 backbone for face embedding models.
 
 import torch
 import torch.nn as nn
@@ -32,10 +13,10 @@ class FaceEmbeddingNet(nn.Module):
     def __init__(self, embedding_dim=512, dropout=0.4):
         super().__init__()
 
-        # Initialize ResNet-18 without pretrained weights.
+        # Use a plain ResNet-18 backbone.
         backbone = resnet18(weights=None)
 
-        # Adapt the first convolution for 112x112 input.
+        # Match the 112x112 input size.
         backbone.conv1 = nn.Conv2d(
             in_channels=3,
             out_channels=64,
@@ -45,18 +26,18 @@ class FaceEmbeddingNet(nn.Module):
             bias=False
         )
 
-        # Remove the initial max-pooling layer.
+        # Skip the initial max-pooling layer.
         backbone.maxpool = nn.Identity()
 
-        # Get the backbone's feature dimension.
+        # Get the feature dimension before the classifier.
         feature_dim = backbone.fc.in_features
 
-        # Remove the original classification layer.
+        # Replace the classifier with a feature extractor.
         backbone.fc = nn.Identity()
 
         self.backbone = backbone
 
-        # Required embedding head: BN -> Dropout -> FC -> BN
+        # Add the embedding projection head.
         self.embedding_head = nn.Sequential(
             nn.BatchNorm1d(feature_dim),
             nn.Dropout(p=dropout),
@@ -66,10 +47,10 @@ class FaceEmbeddingNet(nn.Module):
 
     def forward(self, x, normalize=False):
 
-        # Extract features using ResNet-18.
+        # Run the backbone and produce embeddings.
         features = self.backbone(x)
 
-        # Generate 512-dimensional embeddings.
+        # Project to the final embedding size.
         embeddings = self.embedding_head(features)
 
         # Optional L2 normalization.
@@ -85,7 +66,7 @@ class FaceEmbeddingNet(nn.Module):
 
 if __name__ == "__main__":
 
-    # Test the architecture with dummy images.
+    # Quick sanity check with dummy images.
     device = torch.device(
         "mps" if torch.backends.mps.is_available()
         else "cpu"
@@ -94,7 +75,7 @@ if __name__ == "__main__":
     model = FaceEmbeddingNet().to(device)
     model.eval()
 
-    # Two RGB images with resolution 112x112.
+    # Use a small batch of 112x112 RGB images.
     dummy_images = torch.randn(
         2, 3, 112, 112,
         device=device

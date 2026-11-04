@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from .dataset_transforms import get_train_transform, get_eval_transform
 
 
-# Resolve paths relative to the project root
+# Resolve the dataset root from the project folder.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DATASET_ROOT = PROJECT_ROOT / "Dataset"
@@ -18,7 +18,7 @@ MANIFEST_ROOT = DATASET_ROOT / "Manifests"
 
 
 def read_manifest(filename):
-    """Read a generated CSV manifest."""
+    ## Read a generated CSV manifest.
 
     path = MANIFEST_ROOT / filename
 
@@ -30,7 +30,7 @@ def read_manifest(filename):
 
 
 def load_image(relative_path):
-    """Load an RGB image from the processed image cache."""
+    ## Load an RGB image from the processed image cache.
 
     path = IMAGE_ROOT / relative_path
 
@@ -39,19 +39,7 @@ def load_image(relative_path):
 
 
 class LFWIdentityDataset(Dataset):
-    """
-    Identity-based LFW dataset.
-
-    Used for:
-        - Triplet Loss
-        - Center Loss
-        - SphereFace
-        - ArcFace
-        - Softmax baseline
-
-    Each sample returns:
-        image_tensor, identity_label
-    """
+    ## Identity-based dataset for training and class labels.
 
     def __init__(
         self,
@@ -90,7 +78,7 @@ class LFWIdentityDataset(Dataset):
                 "view2_images.csv"
             )
 
-            # Never train on held-out identities.
+            # Exclude held-out identities from training.
             self.samples = [
                 row for row in all_samples
                 if int(row["fold"]) not in held_out
@@ -102,7 +90,7 @@ class LFWIdentityDataset(Dataset):
         if not self.samples:
             raise ValueError("No training samples found.")
 
-        # Assign a numeric label to each identity.
+        # Map each identity to a numeric class index.
         identities = sorted({
             row["identity"] for row in self.samples
         })
@@ -117,7 +105,7 @@ class LFWIdentityDataset(Dataset):
             for row in self.samples
         ]
 
-        # Useful for Triplet Loss P x K sampling.
+        # Keep indices grouped by identity for sampling.
         self.indices_by_identity = defaultdict(list)
 
         for index, label in enumerate(self.labels):
@@ -139,20 +127,7 @@ class LFWIdentityDataset(Dataset):
 
 
 class LFWPairDataset(Dataset):
-    """
-    Pair-based LFW dataset.
-
-    Used for:
-        - Siamese training
-        - View 1 validation
-        - View 2 verification
-
-    Returns:
-        image1, image2, label, fold
-
-    label = 1: same person
-    label = 0: different people
-    """
+    ## Pair dataset for verification and validation pairs.
 
     MANIFESTS = {
         "view1_train": "view1_train_pairs.csv",

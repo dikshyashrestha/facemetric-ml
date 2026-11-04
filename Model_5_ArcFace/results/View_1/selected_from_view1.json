@@ -1,0 +1,20 @@
+{
+  "best_main": {
+    "phase": "grid",
+    "scale": 30,
+    "margin": 0.3,
+    "learning_rate": 0.0001,
+    "epochs": 28,
+    "max_epoch_budget": 30,
+    "view1_plateau_reached": true,
+    "final_validation_accuracy": 0.684,
+    "final_validation_auc": 0.7486119999999999,
+    "best_validation_accuracy": 0.686,
+    "best_validation_epoch": 22,
+    "final_train_loss": 8.060192899427552,
+    "training_seconds": 1332.625,
+    "run_folder": "View_1/grid/s_30_m_0.3_lr_0.0001",
+    "rank_within_grid": 1
+  },
+  "ablation": "View_1/ablation/s_30_lr_0.0001_m_0"
+}
