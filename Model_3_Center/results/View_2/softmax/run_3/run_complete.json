@@ -1,0 +1,33 @@
+{
+  "variant": "softmax",
+  "stage": "View 2",
+  "run_number": 3,
+  "held_out_folds": [
+    5,
+    6
+  ],
+  "lambda": 0.0,
+  "learning_rate": 0.0001,
+  "seed": 42,
+  "epochs_completed": 30,
+  "training_seconds": 5017.5,
+  "validation_seconds": 0,
+  "final_train_loss": 0.6607241896558399,
+  "final_classification_loss": 0.6607241896558399,
+  "final_center_loss": 194.41911706845622,
+  "final_intra_class_distance": 19.6235492643246,
+  "final_inter_center_distance": 27.302940368652344,
+  "final_validation_accuracy": null,
+  "final_validation_auc": null,
+  "best_validation_accuracy": null,
+  "best_validation_epoch": null,
+  "peak_sampled_mps_driver_mib": 5422.2,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "training_data": {
+    "classes": 1374,
+    "training_images": 7770,
+    "min_images_per_class": 2,
+    "evaluation_identity_overlap": 0
+  },
+  "device": "mps"
+}

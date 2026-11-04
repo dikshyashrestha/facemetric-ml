@@ -1,0 +1,33 @@
+{
+  "variant": "sphereface",
+  "stage": "View 2",
+  "run_number": 4,
+  "held_out_folds": [
+    7,
+    8
+  ],
+  "margin": 3,
+  "annealing": true,
+  "learning_rate": 0.0001,
+  "seed": 42,
+  "epochs_completed": 30,
+  "iterations": 3300,
+  "training_seconds": 4569.3,
+  "validation_seconds": 0,
+  "final_train_loss": 1.6157476035031406,
+  "final_annealing_lambda": 5.0,
+  "final_target_angle_degrees": 49.18006349043413,
+  "final_validation_accuracy": null,
+  "final_validation_auc": null,
+  "best_validation_accuracy": null,
+  "best_validation_epoch": null,
+  "peak_sampled_mps_driver_mib": 5448.22,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "training_data": {
+    "classes": 1311,
+    "training_images": 7081,
+    "min_images_per_class": 2,
+    "evaluation_identity_overlap": 0
+  },
+  "device": "mps"
+}

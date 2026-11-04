@@ -1,0 +1,272 @@
+{
+  "model": "Softmax + Center Loss",
+  "variant": "center_loss",
+  "lfw_protocol": "unrestricted, labeled outside data",
+  "fold_scheme": "reduced five-run scheme (PDF 4.2): run j held out folds 2j-1, 2j",
+  "fold_to_run": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 4,
+    "8": 4,
+    "9": 5,
+    "10": 5
+  },
+  "n_training_runs": 5,
+  "seed": 42,
+  "seeds_note": "one seed per run (42); additional seeds not run",
+  "final_hyperparameters": {
+    "lambda": 0.01,
+    "learning_rate": 0.0001,
+    "epochs": 30,
+    "center_alpha": 0.5,
+    "batch_size": 64,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0005,
+    "lr_schedule": "cosine",
+    "min_images_per_class": 2
+  },
+  "view1_selection": {
+    "variant": "center_loss",
+    "lambda": "0.01",
+    "learning_rate": "0.0001",
+    "epochs": "30",
+    "final_validation_accuracy": "0.824",
+    "final_validation_auc": "0.894992",
+    "best_validation_accuracy": "0.835",
+    "best_validation_epoch": "26",
+    "final_train_loss": "2.650496008304449",
+    "final_intra_class_distance": "10.592305100881136",
+    "final_inter_center_distance": "23.44058609008789",
+    "training_minutes": "71.2",
+    "run_folder": "lambda_0.01_lr_0.0001",
+    "rank_within_variant": "1",
+    "selection_criterion": "highest final-epoch View 1 accuracy (best threshold on pairsDevTest), ties by AUC"
+  },
+  "cosine": {
+    "accuracy_mean": 0.8068333333333333,
+    "accuracy_std": 0.024962317279263502,
+    "auc": 0.8880923333333334,
+    "eer": 0.19133333333333333,
+    "tar_at_far_0.01": 0.25366666666666665,
+    "fold_accuracy_file": "fold_accuracy.csv"
+  },
+  "accuracy_std_note": "sample standard deviation (ddof=1) over the 10 folds",
+  "pair_scores_files": [
+    "pair_scores.csv"
+  ],
+  "classes_per_run": [
+    1336,
+    1375,
+    1374,
+    1311,
+    1324
+  ],
+  "training_images_per_run": [
+    7240,
+    7558,
+    7770,
+    7081,
+    7007
+  ],
+  "training_time_total_seconds": 23770.4,
+  "training_time_mean_per_run_seconds": 4754.1,
+  "epochs_per_run": [
+    30,
+    30,
+    30,
+    30,
+    30
+  ],
+  "per_run": [
+    {
+      "variant": "center_loss",
+      "stage": "View 2",
+      "run_number": 1,
+      "held_out_folds": [
+        1,
+        2
+      ],
+      "lambda": 0.01,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "training_seconds": 4702.0,
+      "validation_seconds": 0,
+      "final_train_loss": 2.761630307256648,
+      "final_classification_loss": 2.1609890977893254,
+      "final_center_loss": 60.06412171895525,
+      "final_intra_class_distance": 10.859157494739094,
+      "final_inter_center_distance": 23.649473190307617,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5422.23,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1336,
+        "training_images": 7240,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "center_loss",
+      "stage": "View 2",
+      "run_number": 2,
+      "held_out_folds": [
+        3,
+        4
+      ],
+      "lambda": 0.01,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "training_seconds": 4924.2,
+      "validation_seconds": 0,
+      "final_train_loss": 2.8320320885060197,
+      "final_classification_loss": 2.2653327271089716,
+      "final_center_loss": 56.66993765103615,
+      "final_intra_class_distance": 10.543353977849929,
+      "final_inter_center_distance": 23.680957794189453,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5422.23,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1375,
+        "training_images": 7558,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "center_loss",
+      "stage": "View 2",
+      "run_number": 3,
+      "held_out_folds": [
+        5,
+        6
+      ],
+      "lambda": 0.01,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "training_seconds": 5016.7,
+      "validation_seconds": 0,
+      "final_train_loss": 2.7327624372214325,
+      "final_classification_loss": 2.187251349126012,
+      "final_center_loss": 54.55111063807464,
+      "final_intra_class_distance": 10.341547973885024,
+      "final_inter_center_distance": 23.53070831298828,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5422.23,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1374,
+        "training_images": 7770,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "center_loss",
+      "stage": "View 2",
+      "run_number": 4,
+      "held_out_folds": [
+        7,
+        8
+      ],
+      "lambda": 0.01,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "training_seconds": 4582.1,
+      "validation_seconds": 0,
+      "final_train_loss": 2.83148933540691,
+      "final_classification_loss": 2.2610108158805153,
+      "final_center_loss": 57.04785277626731,
+      "final_intra_class_distance": 10.579696429859508,
+      "final_inter_center_distance": 23.567686080932617,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5422.23,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1311,
+        "training_images": 7081,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    },
+    {
+      "variant": "center_loss",
+      "stage": "View 2",
+      "run_number": 5,
+      "held_out_folds": [
+        9,
+        10
+      ],
+      "lambda": 0.01,
+      "learning_rate": 0.0001,
+      "seed": 42,
+      "epochs_completed": 30,
+      "training_seconds": 4545.4,
+      "validation_seconds": 0,
+      "final_train_loss": 3.0431351114850527,
+      "final_classification_loss": 2.455615426422259,
+      "final_center_loss": 58.75196883875296,
+      "final_intra_class_distance": 10.735992825359379,
+      "final_inter_center_distance": 22.8325252532959,
+      "final_validation_accuracy": null,
+      "final_validation_auc": null,
+      "best_validation_accuracy": null,
+      "best_validation_epoch": null,
+      "peak_sampled_mps_driver_mib": 5422.23,
+      "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+      "training_data": {
+        "classes": 1324,
+        "training_images": 7007,
+        "min_images_per_class": 2,
+        "evaluation_identity_overlap": 0
+      },
+      "device": "mps"
+    }
+  ],
+  "hardware": {
+    "device": "mps",
+    "pytorch_version": "2.13.0",
+    "python_platform": "macOS-26.3.1-arm64-arm-64bit",
+    "processor_architecture": "arm64",
+    "mps_available": true,
+    "cuda_available": false,
+    "accelerator_name": "Apple Silicon (MPS)"
+  },
+  "peak_sampled_mps_driver_mib": 5422.23,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "software": {
+    "python": "3.12.16",
+    "torch": "2.13.0",
+    "torchvision": "0.28.0",
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1",
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "git_commit": null,
+    "git_uncommitted_changes": false
+  }
+}

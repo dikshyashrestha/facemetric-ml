@@ -1,0 +1,30 @@
+{
+  "variant": "no_annealing",
+  "stage": "View 1",
+  "run_number": null,
+  "held_out_folds": [],
+  "margin": 4,
+  "annealing": false,
+  "learning_rate": 0.0001,
+  "seed": 42,
+  "epochs_completed": 30,
+  "iterations": 3120,
+  "training_seconds": 4192.2,
+  "validation_seconds": 674.6,
+  "final_train_loss": 12.856133763606731,
+  "final_annealing_lambda": 0.0,
+  "final_target_angle_degrees": 86.79866570692796,
+  "final_validation_accuracy": 0.585,
+  "final_validation_auc": 0.5991740000000001,
+  "best_validation_accuracy": 0.6,
+  "best_validation_epoch": 10,
+  "peak_sampled_mps_driver_mib": 5446.17,
+  "memory_note": "MPS: maximum of values sampled after each batch, not a true peak",
+  "training_data": {
+    "classes": 1184,
+    "training_images": 6671,
+    "min_images_per_class": 2,
+    "evaluation_identity_overlap": 0
+  },
+  "device": "mps"
+}
