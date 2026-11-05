@@ -1,0 +1,13 @@
+method,protocol,score,selected_setting,accuracy_mean,accuracy_sd,accuracy,auc,eer,tar_at_far_1pct
+Softmax baseline,Unrestricted,cos,λ=0 (cross-entropy only),0.7827,0.0235,78.27 ± 2.35,0.8676,0.2207,0.3117
+Softmax + Center Loss,Unrestricted,cos,"λ=0.01, α=0.5",0.8068,0.025,80.68 ± 2.50,0.8881,0.1913,0.2537
+Siamese (restricted),Image-restricted,cos,margin=1.25,0.6323,0.0219,63.23 ± 2.19,0.6761,0.365,0.052
+Siamese (restricted),Image-restricted,L2²,margin=1.25,0.6323,0.0219,63.23 ± 2.19,0.6761,0.365,0.052
+Siamese (unrestricted),Unrestricted,cos,margin=1.25,0.6648,0.0397,66.48 ± 3.97,0.7134,0.3347,0.0917
+Siamese (unrestricted),Unrestricted,L2²,margin=1.25,0.6648,0.0397,66.48 ± 3.97,0.7134,0.3347,0.0917
+Triplet (semi-hard),Unrestricted,cos,"α=0.2, P×K=8×4",0.8647,0.0162,86.47 ± 1.62,0.9365,0.1343,0.428
+Triplet (semi-hard),Unrestricted,L2²,"α=0.2, P×K=8×4",0.8647,0.0162,86.47 ± 1.62,0.9365,0.1343,0.428
+Triplet (batch-hard),Unrestricted,cos,"α=0.3, P×K=8×4",0.854,0.019,85.40 ± 1.90,0.9321,0.1447,0.4283
+Triplet (batch-hard),Unrestricted,L2²,"α=0.3, P×K=8×4",0.854,0.019,85.40 ± 1.90,0.9321,0.1447,0.4283
+SphereFace,Unrestricted,cos,"m=3, λ annealed to 5",0.7808,0.0302,78.08 ± 3.02,0.8689,0.215,0.3033
+ArcFace,Unrestricted,cos,"s=30, m=0.3",0.7177,0.0181,71.77 ± 1.81,0.7883,0.2843,0.1807
