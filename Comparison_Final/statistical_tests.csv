@@ -1,0 +1,11 @@
+family,method_a,method_b,mean_difference_pct_points,sd_difference_pct_points,folds_a_better,paired_t_p,wilcoxon_p,paired_t_p_holm,wilcoxon_p_holm
+best vs every other method,Triplet (semi-hard),Softmax baseline,8.2,2.34,10,1.5e-06,0.00195,6.02e-06,0.0137
+best vs every other method,Triplet (semi-hard),Softmax + Center Loss,5.78,2.36,10,2.84e-05,0.00195,5.67e-05,0.0137
+best vs every other method,Triplet (semi-hard),Siamese (restricted),23.23,2.83,10,9e-10,0.00195,6.3e-09,0.0137
+best vs every other method,Triplet (semi-hard),Siamese (unrestricted),19.98,3.33,10,1.45e-08,0.00195,7.23e-08,0.0137
+best vs every other method,Triplet (semi-hard),Triplet (batch-hard),1.07,1.05,8,0.0107,0.0137,0.0107,0.0137
+best vs every other method,Triplet (semi-hard),SphereFace,8.38,2.69,10,3.99e-06,0.00195,1.2e-05,0.0137
+best vs every other method,Triplet (semi-hard),ArcFace,14.7,2.3,10,8.4e-09,0.00195,5.04e-08,0.0137
+planned ablation pairs,Siamese (unrestricted),Siamese (restricted),3.25,4.29,8,0.0402,0.00781,0.0402,0.0176
+planned ablation pairs,Triplet (semi-hard),Triplet (batch-hard),1.07,1.05,8,0.0107,0.0137,0.0214,0.0176
+planned ablation pairs,Softmax + Center Loss,Softmax baseline,2.42,1.42,9,0.000446,0.00586,0.00134,0.0176
