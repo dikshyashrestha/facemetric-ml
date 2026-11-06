@@ -7,7 +7,7 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 .DS_Store
-# All data/generated dataset content stays local; preserve preprocessing source/docs
+#
 /Dataset/*
 !/Dataset/preprocessdata.py
 !/Dataset/README.md

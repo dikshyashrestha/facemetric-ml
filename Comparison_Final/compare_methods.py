@@ -128,9 +128,28 @@ def write_csv(path, rows):
 
 
 def markdown_table(rows, columns):
-    lines = ["| " + " | ".join(columns) + " |",
+    labels = {
+        "method": "Method", "protocol": "Protocol", "score": "Score",
+        "selected_setting": "Selected setting", "accuracy": "Accuracy (%)",
+        "auc": "AUC", "eer": "EER", "tar_at_far_1pct": "TAR at FAR=1%",
+        "family": "Comparison group", "method_a": "Method A", "method_b": "Method B",
+        "mean_difference_pct_points": "Difference (percentage points)",
+        "folds_a_better": "Folds A was better", "paired_t_p": "Paired t-test p",
+        "paired_t_p_holm": "Paired t-test p (Holm)", "wilcoxon_p": "Wilcoxon p",
+        "wilcoxon_p_holm": "Wilcoxon p (Holm)", "accelerator": "Accelerator",
+        "platform": "Platform", "pytorch": "PyTorch", "epochs_per_run": "Epochs per run",
+        "total_training_hours": "Total training (hours)", "mean_hours_per_run": "Hours per run",
+        "mean_minutes_per_epoch": "Minutes per epoch", "peak_memory_mib": "Memory (MiB)",
+        "memory_measurement": "Memory measurement", "model_folder": "Model folder",
+        "group": "Experiment group", "setting": "Setting", "epochs": "Epochs",
+        "view1_final_accuracy": "View 1 accuracy", "view1_final_auc": "View 1 AUC",
+        "rank": "Rank", "check": "Check", "result": "Result", "detail": "Details",
+    }
+    def cell(value):
+        return str(value).replace("|", "\\|")
+    lines = ["| " + " | ".join(labels.get(c, c) for c in columns) + " |",
              "|" + "|".join("---" for _ in columns) + "|"]
-    lines += ["| " + " | ".join(str(r[c]) for c in columns) + " |" for r in rows]
+    lines += ["| " + " | ".join(cell(r[c]) for c in columns) + " |" for r in rows]
     return "\n".join(lines)
 
 
@@ -502,11 +521,16 @@ def main():
     table = comparison_table(METHODS, results)
     write_csv(OUT_DIR / "comparison_table.csv", table)
     (OUT_DIR / "comparison_table.md").write_text(
-        "# LFW View 2 verification results\n\n"
-        "Accuracy = mean ± sample SD (ddof=1) over the 10 View 2 folds, in %. "
-        "The SD measures fold-to-fold variation of one seed (42); it is not seed variance. "
-        "AUC, EER and TAR@FAR=1% are computed from all 6,000 out-of-fold pair scores. "
-        "Every method uses the reduced five-run scheme (PDF §4.2).\n\n"
+        "# View 2 results\n\n"
+        "These results use the 6,000 official LFW pairs and the five-run training scheme. "
+        "Each run holds out two folds, and each fold's threshold is selected from the other "
+        "nine folds' out-of-fold scores.\n\n"
+        "Accuracy is the mean ± sample standard deviation across ten folds, in percent. "
+        "All runs use seed 42, so the standard deviation describes fold variation rather than "
+        "variation between seeds. AUC, EER and TAR at FAR=1% use all 6,000 scores.\n\n"
+        "Cosine similarity and squared L2 distance give the same reported metrics for Siamese "
+        "and Triplet because their test embeddings are normalized. The restricted Siamese "
+        "uses pair labels only; the unrestricted methods also use training identity labels.\n\n"
         + markdown_table(table, ["method", "protocol", "score", "selected_setting", "accuracy",
                                  "auc", "eer", "tar_at_far_1pct"]) + "\n", encoding="utf-8")
 
@@ -515,12 +539,18 @@ def main():
     tests, best = statistical_tests(METHODS, results)
     write_csv(OUT_DIR / "statistical_tests.csv", tests)
     (OUT_DIR / "statistical_tests.md").write_text(
-        f"# Paired tests over the 10 View 2 folds (cosine accuracy)\n\n"
-        f"Best mean accuracy: **{best}**. Holm correction is applied within each family. "
-        "Caveats: (1) the two folds scored by the same run share a model, so the 10 differences are "
-        "not fully independent and p-values are likely optimistic; (2) with n = 10 the smallest "
-        "two-sided Wilcoxon p is ≈ 0.002; (3) restricted vs unrestricted Siamese also differ in "
-        "protocol, by design.\n\n"
+        "# Statistical comparison\n\n"
+        f"{best} has the highest mean View 2 accuracy. The table compares its ten fold "
+        "accuracies with every other method, along with the three planned ablation comparisons. "
+        "Positive differences mean that method A was more accurate. Both raw p-values and "
+        "Holm-adjusted p-values are reported; the correction is applied separately within "
+        "each comparison group.\n\n"
+        "Two folds share each trained model, and the training sets overlap, so the fold "
+        "differences are not fully independent. These tests are exploratory and can overstate "
+        "the evidence for small differences. One seed also leaves seed-to-seed variation "
+        "unmeasured. For ten nonzero differences, the smallest exact two-sided Wilcoxon "
+        "p-value is about 0.002. The restricted/unrestricted Siamese comparison changes "
+        "the available label information as well as the pair sampling.\n\n"
         + markdown_table(tests, ["family", "method_a", "method_b", "mean_difference_pct_points",
                                  "folds_a_better", "paired_t_p", "paired_t_p_holm", "wilcoxon_p",
                                  "wilcoxon_p_holm"]) + "\n", encoding="utf-8")
@@ -528,17 +558,21 @@ def main():
     cost = training_cost(METHODS, results)
     write_csv(OUT_DIR / "training_cost.csv", cost)
     (OUT_DIR / "training_cost.md").write_text(
-        "# Training cost (View 2, five runs per method)\n\n"
-        "Times are wall-clock training time summed over epochs (held-out scoring excluded), as "
-        "recorded by each run. **They are not directly comparable across methods:** runs used "
-        "different machines (Siamese: Apple M1, 8 GB, macOS 15.5; Triplet, Center and SphereFace: "
-        "Apple Silicon Macs on macOS 26.x, whose chip model was not recorded; ArcFace: a CUDA "
-        "Tesla T4), different PyTorch versions, and "
-        "different amounts of work per epoch (4,800 pairs = 9,600 images for Siamese; 300 × 36 images "
-        "for Triplet; one pass over ~7,000–7,800 images in batches of 64 for Softmax / Center / "
-        "SphereFace; 300 × 32 images for ArcFace). MPS memory is the largest of per-batch samples of "
-        "driver-allocated memory (includes allocator cache, not a true peak); CUDA memory is PyTorch's "
-        "peak allocated tensor memory. The two are different quantities.\n\n"
+        "# Training time and memory\n\n"
+        "The table summarizes the five View 2 runs of each method. Training time is the "
+        "sum of the recorded epoch times; held-out scoring is excluded.\n\n"
+        "The experiments ran on different machines. Siamese used an 8 GB Apple M1, "
+        "Triplet used another Apple Silicon Mac, and Softmax, Center Loss and SphereFace "
+        "used an Apple Silicon Mac whose chip model was not recorded. ArcFace used a "
+        "Tesla T4. PyTorch versions also differed. The timings describe these experiments "
+        "and do not provide a comparison of loss-function cost on common hardware.\n\n"
+        "The amount of work per epoch differs too: 9,600 images for Siamese, 10,800 for "
+        "Triplet, roughly 7,000–7,800 eligible images in batches of 64 for the shuffled "
+        "classifiers, and 9,600 images for ArcFace.\n\n"
+        "MPS memory is the largest driver-memory reading sampled after a batch, including "
+        "allocator cache. CUDA memory is the peak tensor allocation reported by PyTorch. "
+        "These are different measurements, and the sampled MPS value can miss a peak "
+        "between readings.\n\n"
         + markdown_table(cost, ["method", "accelerator", "platform", "pytorch", "epochs_per_run",
                                 "total_training_hours", "mean_hours_per_run", "mean_minutes_per_epoch",
                                 "peak_memory_mib", "memory_measurement"]) + "\n", encoding="utf-8")
@@ -546,18 +580,33 @@ def main():
     ablations = view1_ablations(METHODS)
     write_csv(OUT_DIR / "view1_ablations.csv", ablations)
     (OUT_DIR / "view1_ablations.md").write_text(
-        "# View 1 hyperparameter sweeps (as recorded by each model owner)\n\n"
-        "Validation accuracy uses the best threshold on the 1,000 pairsDevTest pairs: a tuning metric, "
-        "optimistic and not comparable to View 2 accuracy. Rank 1 is the configuration used on View 2.\n\n"
+        "# View 1 experiments\n\n"
+        "The table lists all 49 completed development experiments. Accuracy and AUC come "
+        "from the final epoch of each run. Accuracy uses the best threshold on the 1,000 "
+        "pairsDevTest pairs, so it is a tuning measure and is optimistic compared with "
+        "the held-out View 2 results. Accuracy is shown as a fraction.\n\n"
+        "Rank is within the experiment group; rank 1 supplies the final View 2 settings "
+        "for each main variant. SphereFace's m=1 and no-annealing runs and ArcFace's m=0 "
+        "run are development ablations. A rank of 1 in an ablation-only group does not "
+        "mean that it was evaluated on View 2.\n\n"
+        "Learning rate was varied for Triplet and ArcFace. Siamese, Softmax, Center Loss "
+        "and SphereFace used 0.0001 throughout their recorded sweeps.\n\n"
         + markdown_table(ablations, ["model_folder", "group", "setting", "epochs",
                                      "view1_final_accuracy", "view1_final_auc", "rank"]) + "\n",
         encoding="utf-8")
 
     plot_roc(METHODS, results)
 
-    lines = ["# Verification report", "",
-             f"{len(all_checks)} checks, {len(failures)} failed. Generated by compare_methods.py from "
-             "saved results only.", ""]
+    lines = ["# Result consistency checks", "",
+             f"{len(all_checks)} checks completed; {len(failures)} failed.", "",
+             "The checks compare the saved pair scores, fold results, run metadata and "
+             "View 1 selections. Metrics and thresholds are recalculated from the scores, "
+             "and the pair ordering and training counts are compared with the manifests.", "",
+             "Training-isolation entries check the recorded run metadata and manifest counts; "
+             "they are not an independent reconstruction of historical training. The checks "
+             "also do not establish that every statement in the report is correct.", "",
+             "Each method's detailed results appear below. These are output records from "
+             "`compare_methods.py`.", ""]
     for m in METHODS:
         lines += [f"## {m['label']}  (`{m['dir']}`)", "",
                   markdown_table(results[m["key"]]["checks"], ["check", "result", "detail"]), ""]

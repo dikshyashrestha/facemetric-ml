@@ -1,8 +1,12 @@
-# View 1 hyperparameter sweeps (as recorded by each model owner)
+# View 1 experiments
 
-Validation accuracy uses the best threshold on the 1,000 pairsDevTest pairs: a tuning metric, optimistic and not comparable to View 2 accuracy. Rank 1 is the configuration used on View 2.
+The table lists all 49 completed development experiments. Accuracy and AUC come from the final epoch of each run. Accuracy uses the best threshold on the 1,000 pairsDevTest pairs, so it is a tuning measure and is optimistic compared with the held-out View 2 results. Accuracy is shown as a fraction.
 
-| model_folder | group | setting | epochs | view1_final_accuracy | view1_final_auc | rank |
+Rank is within the experiment group; rank 1 supplies the final View 2 settings for each main variant. SphereFace's m=1 and no-annealing runs and ArcFace's m=0 run are development ablations. A rank of 1 in an ablation-only group does not mean that it was evaluated on View 2.
+
+Learning rate was varied for Triplet and ArcFace. Siamese, Softmax, Center Loss and SphereFace used 0.0001 throughout their recorded sweeps.
+
+| Model folder | Experiment group | Setting | Epochs | View 1 accuracy | View 1 AUC | Rank |
 |---|---|---|---|---|---|---|
 | Model_3_Center | center_loss | lambda=0.01, learning_rate=0.0001 | 30 | 0.824 | 0.895 | 1 |
 | Model_3_Center | center_loss | lambda=0.003, learning_rate=0.0001 | 30 | 0.819 | 0.8948 | 2 |

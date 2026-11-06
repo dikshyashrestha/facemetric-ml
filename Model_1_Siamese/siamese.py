@@ -61,7 +61,7 @@ EPOCHS = 30                   # Epochs per run.
 BATCH_PAIRS = 16              # Each batch has 8 genuine and 8 impostor pairs.
 NUM_WORKERS = 0               # Image loading takes about 2% of epoch time on M1.
 
-# Start with margin 1.0 as a pilot run.
+# View 1 margin search.
 MARGINS = [1.0, 0.5, 0.75, 1.25]
 LEARNING_RATES = [1e-4]
 WEIGHT_DECAY = 5e-4           # AdamW weight decay.

@@ -1,8 +1,10 @@
-# Paired tests over the 10 View 2 folds (cosine accuracy)
+# Statistical comparison
 
-Best mean accuracy: **Triplet (semi-hard)**. Holm correction is applied within each family. Caveats: (1) the two folds scored by the same run share a model, so the 10 differences are not fully independent and p-values are likely optimistic; (2) with n = 10 the smallest two-sided Wilcoxon p is ≈ 0.002; (3) restricted vs unrestricted Siamese also differ in protocol, by design.
+Triplet (semi-hard) has the highest mean View 2 accuracy. The table compares its ten fold accuracies with every other method, along with the three planned ablation comparisons. Positive differences mean that method A was more accurate. Both raw p-values and Holm-adjusted p-values are reported; the correction is applied separately within each comparison group.
 
-| family | method_a | method_b | mean_difference_pct_points | folds_a_better | paired_t_p | paired_t_p_holm | wilcoxon_p | wilcoxon_p_holm |
+Two folds share each trained model, and the training sets overlap, so the fold differences are not fully independent. These tests are exploratory and can overstate the evidence for small differences. One seed also leaves seed-to-seed variation unmeasured. For ten nonzero differences, the smallest exact two-sided Wilcoxon p-value is about 0.002. The restricted/unrestricted Siamese comparison changes the available label information as well as the pair sampling.
+
+| Comparison group | Method A | Method B | Difference (percentage points) | Folds A was better | Paired t-test p | Paired t-test p (Holm) | Wilcoxon p | Wilcoxon p (Holm) |
 |---|---|---|---|---|---|---|---|---|
 | best vs every other method | Triplet (semi-hard) | Softmax baseline | 8.2 | 10 | 1.5e-06 | 6.02e-06 | 0.00195 | 0.0137 |
 | best vs every other method | Triplet (semi-hard) | Softmax + Center Loss | 5.78 | 10 | 2.84e-05 | 5.67e-05 | 0.00195 | 0.0137 |

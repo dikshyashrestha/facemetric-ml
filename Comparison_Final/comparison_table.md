@@ -1,8 +1,12 @@
-# LFW View 2 verification results
+# View 2 results
 
-Accuracy = mean ± sample SD (ddof=1) over the 10 View 2 folds, in %. The SD measures fold-to-fold variation of one seed (42); it is not seed variance. AUC, EER and TAR@FAR=1% are computed from all 6,000 out-of-fold pair scores. Every method uses the reduced five-run scheme (PDF §4.2).
+These results use the 6,000 official LFW pairs and the five-run training scheme. Each run holds out two folds, and each fold's threshold is selected from the other nine folds' out-of-fold scores.
 
-| method | protocol | score | selected_setting | accuracy | auc | eer | tar_at_far_1pct |
+Accuracy is the mean ± sample standard deviation across ten folds, in percent. All runs use seed 42, so the standard deviation describes fold variation rather than variation between seeds. AUC, EER and TAR at FAR=1% use all 6,000 scores.
+
+Cosine similarity and squared L2 distance give the same reported metrics for Siamese and Triplet because their test embeddings are normalized. The restricted Siamese uses pair labels only; the unrestricted methods also use training identity labels.
+
+| Method | Protocol | Score | Selected setting | Accuracy (%) | AUC | EER | TAR at FAR=1% |
 |---|---|---|---|---|---|---|---|
 | Softmax baseline | Unrestricted | cos | λ=0 (cross-entropy only) | 78.27 ± 2.35 | 0.8676 | 0.2207 | 0.3117 |
 | Softmax + Center Loss | Unrestricted | cos | λ=0.01, α=0.5 | 80.68 ± 2.50 | 0.8881 | 0.1913 | 0.2537 |

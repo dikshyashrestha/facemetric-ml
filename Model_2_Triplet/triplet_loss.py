@@ -554,8 +554,8 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
     save_json(complete, summary)
     if plateau is not None and not plateau["reached"]:
         print(f"WARNING: View 1 accuracy has not plateaued by the maximum of "
-              f"{epochs} epochs ({run_dir}). View 2 will refuse to use "
-              "this configuration until convergence is established.")
+              f"{epochs} epochs ({run_dir}). The run reached its epoch budget "
+              "without meeting the plateau criterion.")
     # Retain final View 2 checkpoints for later inspection.
     if stage == "view2" and not smoke:
         print(f"Training checkpoint preserved: {checkpoint}", flush=True)
@@ -661,8 +661,7 @@ def selected_hyperparameters(method):
             f"reach the defined plateau criterion within "
             f"{best['epochs']} epochs. "
             "Proceeding with the best configuration under the "
-            "fixed training budget. "
-            "This will be documented in the report.",
+            "fixed training budget.",
             flush=True,
         )   
     return {"margin": float(best["margin"]), "learning_rate": float(best["learning_rate"]),

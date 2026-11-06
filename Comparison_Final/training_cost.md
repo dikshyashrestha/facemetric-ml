@@ -1,8 +1,14 @@
-# Training cost (View 2, five runs per method)
+# Training time and memory
 
-Times are wall-clock training time summed over epochs (held-out scoring excluded), as recorded by each run. **They are not directly comparable across methods:** runs used different machines (Siamese: Apple M1, 8 GB, macOS 15.5; Triplet, Center and SphereFace: Apple Silicon Macs on macOS 26.x, whose chip model was not recorded; ArcFace: a CUDA Tesla T4), different PyTorch versions, and different amounts of work per epoch (4,800 pairs = 9,600 images for Siamese; 300 × 36 images for Triplet; one pass over ~7,000–7,800 images in batches of 64 for Softmax / Center / SphereFace; 300 × 32 images for ArcFace). MPS memory is the largest of per-batch samples of driver-allocated memory (includes allocator cache, not a true peak); CUDA memory is PyTorch's peak allocated tensor memory. The two are different quantities.
+The table summarizes the five View 2 runs of each method. Training time is the sum of the recorded epoch times; held-out scoring is excluded.
 
-| method | accelerator | platform | pytorch | epochs_per_run | total_training_hours | mean_hours_per_run | mean_minutes_per_epoch | peak_memory_mib | memory_measurement |
+The experiments ran on different machines. Siamese used an 8 GB Apple M1, Triplet used another Apple Silicon Mac, and Softmax, Center Loss and SphereFace used an Apple Silicon Mac M1 Pro with 16GB of RAM, ArcFace used a Tesla T4. PyTorch versions also differed. The timings describe these experiments and do not provide a comparison of loss-function cost on common hardware.
+
+The amount of work per epoch differs too: 9,600 images for Siamese, 10,800 for Triplet, roughly 7,000–7,800 eligible images in batches of 64 for the shuffled classifiers, and 9,600 images for ArcFace.
+
+MPS memory is the largest driver-memory reading sampled after a batch, including allocator cache. CUDA memory is the peak tensor allocation reported by PyTorch. These are different measurements, and the sampled MPS value can miss a peak between readings.
+
+| Method | Accelerator | Platform | PyTorch | Epochs per run | Total training (hours) | Hours per run | Minutes per epoch | Memory (MiB) | Memory measurement |
 |---|---|---|---|---|---|---|---|---|---|
 | Softmax baseline | Apple Silicon GPU (MPS) | macOS-26.3.1-arm64-arm-64bit | 2.13.0 | 30 | 6.57 | 1.31 | 2.63 | 5422 | MPS driver memory, max of per-batch samples (not a true peak) |
 | Softmax + Center Loss | Apple Silicon GPU (MPS) | macOS-26.3.1-arm64-arm-64bit | 2.13.0 | 30 | 6.6 | 1.32 | 2.64 | 5422 | MPS driver memory, max of per-batch samples (not a true peak) |

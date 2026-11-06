@@ -1,5 +1,5 @@
 
-## Shared ResNet-18 backbone for face embedding models.
+# Shared ResNet-18 face embedding network.
 
 import torch
 import torch.nn as nn
@@ -13,10 +13,9 @@ class FaceEmbeddingNet(nn.Module):
     def __init__(self, embedding_dim=512, dropout=0.4):
         super().__init__()
 
-        # Use a plain ResNet-18 backbone.
         backbone = resnet18(weights=None)
 
-        # Match the 112x112 input size.
+        # A 3x3, stride-1 stem retains resolution for 112x112 inputs.
         backbone.conv1 = nn.Conv2d(
             in_channels=3,
             out_channels=64,
@@ -26,18 +25,15 @@ class FaceEmbeddingNet(nn.Module):
             bias=False
         )
 
-        # Skip the initial max-pooling layer.
         backbone.maxpool = nn.Identity()
 
-        # Get the feature dimension before the classifier.
         feature_dim = backbone.fc.in_features
 
-        # Replace the classifier with a feature extractor.
         backbone.fc = nn.Identity()
 
         self.backbone = backbone
 
-        # Add the embedding projection head.
+        # BN-Dropout-FC-BN embedding head shared by all five methods.
         self.embedding_head = nn.Sequential(
             nn.BatchNorm1d(feature_dim),
             nn.Dropout(p=dropout),
@@ -47,13 +43,10 @@ class FaceEmbeddingNet(nn.Module):
 
     def forward(self, x, normalize=False):
 
-        # Run the backbone and produce embeddings.
         features = self.backbone(x)
 
-        # Project to the final embedding size.
         embeddings = self.embedding_head(features)
 
-        # Optional L2 normalization.
         if normalize:
             embeddings = F.normalize(
                 embeddings,
@@ -66,7 +59,7 @@ class FaceEmbeddingNet(nn.Module):
 
 if __name__ == "__main__":
 
-    # Quick sanity check with dummy images.
+    # Check output shape and unit norms on a small synthetic batch.
     device = torch.device(
         "mps" if torch.backends.mps.is_available()
         else "cpu"
@@ -75,7 +68,6 @@ if __name__ == "__main__":
     model = FaceEmbeddingNet().to(device)
     model.eval()
 
-    # Use a small batch of 112x112 RGB images.
     dummy_images = torch.randn(
         2, 3, 112, 112,
         device=device

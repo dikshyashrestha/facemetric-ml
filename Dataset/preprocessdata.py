@@ -207,7 +207,7 @@ def prepare_protocols(metadata: Path) -> dict[str, int]:
 
 
 def find_images(metadata: Path) -> Path:
-    """Handle your nested lfw_deepfuneeled/lfw-deepfunneled/... structure."""
+    """Locate the image directory within the extracted archive."""
     candidates = [p for p in metadata.rglob("lfw-deepfunneled")
                   if p.is_dir() and (p / "Aaron_Eckhart").is_dir()]
     if len(candidates) != 1:
@@ -236,7 +236,7 @@ def process_images(image_root: Path) -> None:
             original.load()  # Check that the full JPEG can be decoded.
             if original.size != (250, 250):
                 raise ValueError(f"Not 250x250: {rel_jpg} ({original.size})")
-            # Already aligned. No arbitrary 224x224 crop and no random crop.
+            # Deep-funneled images are already aligned; resize without further cropping.
             resized = original.convert("RGB").resize((112, 112), Image.Resampling.LANCZOS)
         target = OUTPUT / rel_png
         target.parent.mkdir(parents=True, exist_ok=True)
