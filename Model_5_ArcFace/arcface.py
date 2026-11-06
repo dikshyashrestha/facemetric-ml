@@ -1,4 +1,4 @@
-"""ArcFace training pipeline for the LFW project."""
+"""Train and evaluate the ArcFace model on LFW."""
 
 import csv
 import json
@@ -14,7 +14,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Keep import order consistent on macOS.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -38,33 +37,35 @@ from Common.model_utils import (
 )
 
 
-# Training config.
-STAGE = "view2_final"  # "smoke_test", "view1_tuning", "view2_final"
-SCALES = [16, 30, 64]                 # Scale sweep
-MARGINS = [0.2, 0.3, 0.5]             # Margin sweep
-LEARNING_RATES = [1e-4, 3e-4]        # LR sweep
-ABLATED_MARGIN = 0.0                 # Zero-margin baseline
+# Training settings.
+STAGE = "view2_final"  # Choose "smoke_test", "view1_tuning", or "view2_final".
+SCALES = [16, 30, 64]                 # Scales tested during View 1 tuning.
+MARGINS = [0.2, 0.3, 0.5]             # Angular margins tested during View 1 tuning.
+LEARNING_RATES = [1e-4, 3e-4]        # Learning rates tested during View 1 tuning.
+ABLATED_MARGIN = 0.0                 # Zero-margin softmax baseline.
 SEED = 42
-EPOCHS = 30                        # Max View 1 epochs
+EPOCHS = 30                        # Maximum epochs for View 1 runs.
 VIEW1_MIN_EPOCHS = 20
 VIEW1_PLATEAU_PATIENCE = 6
-VIEW1_MIN_IMPROVEMENT = 0.002         # Min validation gain
+VIEW1_MIN_IMPROVEMENT = 0.002         # Minimum accuracy gain counted as improvement.
 WEIGHT_DECAY = 5e-4
 ADAMW_BETAS = (0.9, 0.999)
 
-# Batch setup for the ArcFace classifier.
+# P×K batches for the ArcFace classifier.
 P_IDENTITIES = 8
-K_IMAGES = 4                        # Images per ID
+# Images per identity.
+K_IMAGES = 4
 NUM_WORKERS = 0
-VIEW1_STEPS_PER_EPOCH = math.ceil(2200 / 16)  # Steps per epoch
-VIEW2_STEPS_PER_EPOCH = math.ceil(4800 / 16)  # Steps per epoch
+VIEW1_STEPS_PER_EPOCH = math.ceil(2200 / 16)  # Number of batches per View 1 epoch.
+VIEW2_STEPS_PER_EPOCH = math.ceil(4800 / 16)  # Number of batches per View 2 epoch.
 VIEW2_HELD_OUT = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)]
 
+# Smoke-test limits.
 SMOKE_EPOCHS = 1
 SMOKE_STEPS = 3
 SMOKE_VAL_PAIRS = 64
 SMOKE_FOLD_PAIRS = 32
-EMBEDDINGS_PER_FOLD = 128  # Local plot samples
+EMBEDDINGS_PER_FOLD = 128  # Maximum embeddings saved per fold for visualization.
 
 MODEL_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = MODEL_DIR / "results"
@@ -73,7 +74,7 @@ CHECKPOINT_DIR = MODEL_DIR / "checkpoints"
 IMAGE_ROOT = PROJECT_ROOT / "Dataset" / "Processed" / "deepfunneled_112"
 
 
-# Output helpers.
+# CSV and environment helpers.
 def write_csv(path, rows, fields=None):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,9 +130,9 @@ def view1_plateau(history):
             "minimum_accuracy_improvement": VIEW1_MIN_IMPROVEMENT}
 
 
-# ArcFace head.
+# ArcFace classifier.
 class ArcFaceHead(nn.Module):
-    """ArcFace margin head for classification training."""
+    """Apply the additive angular margin to the target-class logit."""
 
     def __init__(self, embedding_dim, num_classes, scale, margin):
         super().__init__()
@@ -161,9 +162,9 @@ class ArcFaceHead(nn.Module):
         return logits
 
 
-# Training dataset setup.
+# Training data.
 class ArcFaceTrainingDataset(Dataset):
-    """Dataset with only eligible identities."""
+    """Wrap LFW identity data, excluding classes with fewer than two images."""
 
     def __init__(self, base):
         self.base = base
@@ -211,7 +212,7 @@ def check_training_data(base_dataset, dataset, stage, held_out):
 
 
 def sample_batches(dataset, steps, epoch):
-    """Build balanced ArcFace batches."""
+    """Sample P×K batches, repeating images when a class has fewer than K."""
     rng = np.random.default_rng([SEED, epoch])
     ids = np.array(sorted(dataset.by_class))
     batches = []
@@ -228,7 +229,7 @@ def sample_batches(dataset, steps, epoch):
     return batches
 
 
-# Training and reporting.
+# Training, plots, and reporting.
 def plot_history(run_dir, history, title):
     import matplotlib
     matplotlib.use("Agg")
@@ -276,7 +277,7 @@ def train_one_run(run_dir, stage, scale, margin, learning_rate, epochs,
         list(model.parameters()) + list(head.parameters()),
         lr=learning_rate, weight_decay=WEIGHT_DECAY, betas=ADAMW_BETAS,
     )
-    # Keep the LR schedule consistent across View 1 and View 2.
+    # Use the same cosine-schedule length for View 1 and View 2.
     scheduler_tmax = epochs if smoke else EPOCHS
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=scheduler_tmax)
 
@@ -517,7 +518,7 @@ def train_one_run(run_dir, stage, scale, margin, learning_rate, epochs,
     return summary
 
 
-# Held-out embedding samples for plots.
+# Save held-out embeddings for visualization.
 @torch.inference_mode()
 def save_embedding_samples(model, scored_rows, folds, device, run_dir):
     transform = get_eval_transform()
@@ -641,7 +642,7 @@ def run_view1(smoke=False):
     print("\nView 1 completed. Inspect tuning_summary.csv and training curves.")
 
 
-# View 2 aggregation.
+# View 2 evaluation and aggregation.
 def fold_table(rows, evaluated):
     result = []
     for fold in evaluated["folds"]:

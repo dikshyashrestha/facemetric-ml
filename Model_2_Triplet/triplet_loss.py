@@ -1,4 +1,4 @@
-"""Triplet loss training pipeline for the LFW project."""
+"""Train and evaluate semi-hard and batch-hard triplet loss on LFW."""
 
 import csv
 import json
@@ -10,12 +10,11 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
-# Add the project root to the Python path.
+# Allow imports from the shared Common package when running this script.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Keep torch import order stable on macOS.
 import torch
 import torch.nn.functional as F
 import torchvision
@@ -38,36 +37,36 @@ from Common.model_utils import (
 )
 
 
-# Training config.
-STAGE = "view2_final"  # "smoke_test", "view1_tuning", "view2_final"
+# Training settings.
+STAGE = "view2_final"  # Choose "smoke_test", "view1_tuning", or "view2_final".
 MINING_METHODS = ["semi_hard", "batch_hard"]
-MARGINS = [0.1, 0.2, 0.3]  # Margin sweep
-LEARNING_RATES = [1e-4, 3e-4]  # LR sweep
-EPOCHS = 30                # Max View 1 epochs
-VIEW1_MIN_EPOCHS = 20      # Min epochs for plateau check
-VIEW1_PLATEAU_PATIENCE = 6 # Plateau patience
-VIEW1_MIN_IMPROVEMENT = 0.002  # Min validation gain
-SEED = 42                 # Fixed seed
+MARGINS = [0.1, 0.2, 0.3]  # Margins tested during View 1 tuning.
+LEARNING_RATES = [1e-4, 3e-4]  # Learning rates tested during View 1 tuning.
+EPOCHS = 30                # Maximum epochs for View 1 runs.
+VIEW1_MIN_EPOCHS = 20      # Minimum epochs before checking for a plateau.
+VIEW1_PLATEAU_PATIENCE = 6 # Stop after this many epochs without improvement.
+VIEW1_MIN_IMPROVEMENT = 0.002  # Minimum accuracy gain counted as improvement.
+SEED = 42                  # Shared seed for reproducible runs.
 WEIGHT_DECAY = 5e-4
 ADAMW_BETAS = (0.9, 0.999)
 
-# Batch setup for the local workstation.
-# Use only identities with at least two distinct images.
+# P×K batches use multi-image identities; singleton identities can add negatives.
 P_IDENTITIES = 8
 K_IMAGES = 4
 SINGLETON_NEGATIVES = 4
 NUM_WORKERS = 0
 
-# Keep optimizer steps aligned with the Siamese setup.
+# Match the number of optimizer steps used by the Siamese runs.
 VIEW1_STEPS_PER_EPOCH = math.ceil(2200 / 16)
 VIEW2_STEPS_PER_EPOCH = math.ceil(4800 / 16)
 VIEW2_HELD_OUT = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)]
 
+# Smoke-test limits.
 SMOKE_EPOCHS = 1
 SMOKE_STEPS = 3
 SMOKE_VAL_PAIRS = 64
 SMOKE_FOLD_PAIRS = 32
-EMBEDDINGS_PER_FOLD = 128  # Local plot samples
+EMBEDDINGS_PER_FOLD = 128  # Maximum embeddings saved per fold for visualization.
 
 MODEL_DIR = Path(__file__).resolve().parent
 ROOT = MODEL_DIR.parent
@@ -77,7 +76,7 @@ CHECKPOINT_DIR = MODEL_DIR / "checkpoints"
 IMAGE_ROOT = ROOT / "Dataset" / "Processed" / "deepfunneled_112"
 
 
-# Output helpers.
+# CSV, metadata, and checkpoint helpers.
 def write_csv(path, rows, fields=None):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,7 +111,7 @@ def ckpt_path(run_dir):
 
 
 def view1_plateau(history):
-    """Check whether validation accuracy has flatlined."""
+    """Return whether validation accuracy has met the plateau criterion."""
     best_accuracy = -float("inf")
     last_improvement_epoch = 0
     for row in history:
@@ -134,7 +133,7 @@ def view1_plateau(history):
             "min_accuracy_improvement": VIEW1_MIN_IMPROVEMENT}
 
 
-# Batch sampling.
+# P×K batch sampling.
 def identity_indices(dataset):
     pools = defaultdict(list)
     for idx, row in enumerate(dataset.samples):
@@ -151,13 +150,13 @@ def sample_batch_indices(pools, multi, singleton, rng):
     indices = []
     for identity in selected_ids:
         items = pools[identity]
-        # Start with unique images, then repeat if needed.
+        # Sample distinct images first, repeating only when the identity has too few.
         chosen = rng.choice(items, size=min(K_IMAGES, len(items)), replace=False).tolist()
         if len(chosen) < K_IMAGES:
             chosen += rng.choice(items, size=K_IMAGES-len(chosen), replace=True).tolist()
         indices.extend(int(i) for i in chosen)
 
-    # Singletons are only used as negatives.
+    # Singleton identities cannot form positive pairs, so use them as negatives.
     if SINGLETON_NEGATIVES and singleton:
         chosen_ids = rng.choice(singleton,
                                 size=min(SINGLETON_NEGATIVES, len(singleton)),
@@ -182,7 +181,7 @@ def check_identity_isolation(dataset, stage, held_out):
     else:
         if any(int(r["fold"]) in held_out for r in rows):
             raise RuntimeError("LEAKAGE: training dataset includes held-out fold")
-        # Keep each held-out fold's full identity set together.
+        # Treat all identities in a held-out fold as evaluation identities.
         held_ids = {r["identity"] for r in read_manifest("view2_images.csv")
                     if int(r["fold"]) in held_out}
     overlap = train_ids & held_ids
@@ -197,7 +196,7 @@ def check_identity_isolation(dataset, stage, held_out):
 
 # Triplet mining and loss.
 def mine_triplets(embeddings, labels, image_paths, margin, method, anchor_count):
-    """Return triplet loss and mining stats."""
+    """Mine triplets and return their loss and summary statistics."""
     z = F.normalize(embeddings, p=2, dim=1)
     labels = labels.to(z.device)
     with torch.no_grad():
@@ -241,7 +240,7 @@ def mine_triplets(embeddings, labels, image_paths, margin, method, anchor_count)
                 raise ValueError(method)
 
     if not aa:
-        # Return a zero loss tensor so the caller can skip the update cleanly.
+        # Preserve the computation graph so the caller can safely skip this update.
         return z.sum() * 0, {"eligible": possible, "mined": 0,
                               "active": 0, "mean_ap2": None, "mean_an2": None}
 
@@ -256,7 +255,7 @@ def mine_triplets(embeddings, labels, image_paths, margin, method, anchor_count)
     }
 
 
-# Training and validation flow.
+# Training and validation.
 def plot_history(run_dir, history, title):
     import matplotlib
     matplotlib.use("Agg")
@@ -339,7 +338,7 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
         "training_data": info, "hardware": hardware_info(device),
         "software": software_info(), "settings_key": params,
     }
-    # Don't reuse a completed run if the settings changed.
+    # Reject completed results if their saved settings differ.
     if complete.exists():
         config_path = run_dir / "config.json"
         if not config_path.is_file():
@@ -402,11 +401,11 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
                                        P_IDENTITIES * K_IMAGES)
             if not torch.isfinite(loss):
                 raise RuntimeError(f"Nonfinite triplet loss in epoch {epoch}")
-            if diag["active"]:  # skip updates when no triplet violates the margin
+            if diag["active"]:  # Update only when at least one triplet has nonzero loss.
                 loss.backward()
                 optimizer.step()
                 total_updates += 1
-            # Count mined triplets even when the loss is zero.
+            # Keep mining counts even when no mined triplet contributes to the loss.
             if diag["mined"]:
                 weighted_ap += diag["mean_ap2"] * diag["mined"]
                 weighted_an += diag["mean_an2"] * diag["mined"]
@@ -452,7 +451,7 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
                        validation_auc=float(roc_auc_score(y, s)),
                        validation_threshold=threshold,
                        validation_time_seconds=round(time.perf_counter() - t0, 2))
-            # Keep each epoch's validation metrics.
+            # Save validation scores for each epoch.
             write_csv(run_dir / "validation_scores" / f"epoch_{epoch:03d}.csv",
                       [{"epoch": epoch, **r} for r in scored])
 
@@ -461,7 +460,7 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
             row["view1_plateau_reached"] = status["reached"]
             row["epochs_without_val_improvement"] = status["epochs_without_improvement"]
 
-        # Log active triplets per batch.
+        # Save triplet-mining diagnostics for each batch.
         write_csv(run_dir / "mining_batches" / f"epoch_{epoch:03d}.csv", batch_log)
         history.append(row)
         write_csv(run_dir / "training_history.csv", history)
@@ -489,7 +488,7 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
         for fold in held_out:
             dataset = LFWPairDataset(split="view2", fold=fold, train=False)
             if smoke:
-                # Keep the class split roughly balanced when possible.
+                # Sample from both ends of the manifest to retain both pair labels.
                 n = SMOKE_FOLD_PAIRS // 2
                 dataset.samples = dataset.samples[:n] + dataset.samples[-n:]
             heldout_scores.extend(score_pair_dataset(model, dataset, device, batch_size=32))
@@ -557,7 +556,7 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
         print(f"WARNING: View 1 accuracy has not plateaued by the maximum of "
               f"{epochs} epochs ({run_dir}). View 2 will refuse to use "
               "this configuration until convergence is established.")
-    # Keep completed View 2 checkpoints.
+    # Retain final View 2 checkpoints for later inspection.
     if stage == "view2" and not smoke:
         print(f"Training checkpoint preserved: {checkpoint}", flush=True)
     else:
@@ -566,10 +565,10 @@ def train_one_run(run_dir, stage, method, margin, learning_rate, epochs,
     return summary
 
 
-# Local embedding samples for plots.
+# Save held-out embeddings for visualization.
 @torch.inference_mode()
 def save_embedding_samples(model, scored, folds, device, run_dir):
-    """Save held-out embeddings for plotting."""
+    """Save a sample of held-out embeddings for visualization."""
     transform = get_eval_transform()
     for fold in folds:
         paths = sorted({p for r in scored if int(r["fold"]) == fold
@@ -577,7 +576,7 @@ def save_embedding_samples(model, scored, folds, device, run_dir):
         by_identity = defaultdict(list)
         for path in paths:
             by_identity[path.split("/")[0]].append(path)
-        # Prefer identities with multiple examples for better clustering.
+        # Sample multi-image identities first to make plots more informative.
         rng = np.random.default_rng([SEED, fold])
         multi = [i for i in sorted(by_identity) if len(by_identity[i]) >= 2]
         singles = [i for i in sorted(by_identity) if len(by_identity[i]) == 1]
@@ -607,7 +606,7 @@ def save_embedding_samples(model, scored, folds, device, run_dir):
                             embeddings=np.concatenate(features))
 
 
-# View 1 search and selection.
+# View 1 tuning and selection.
 def write_tuning_summary():
     rows = []
     for file in sorted((RESULTS_DIR / "View_1").glob("*/*/run_complete.json")):
@@ -670,7 +669,7 @@ def selected_hyperparameters(method):
             "epochs": int(best["epochs"]), "view1_selection": best}
 
 
-# View 2 aggregation and outputs.
+# View 2 evaluation and outputs.
 def fold_table(rows, metrics, key, higher_is_same):
     output = []
     for fold in metrics["folds"]:
@@ -798,7 +797,7 @@ def run_view2(smoke=False):
                      if smoke else selected_hyperparameters(method))
         summaries = []
         for number, held_out in enumerate(VIEW2_HELD_OUT, 1):
-            # Smoke mode only needs one run.
+            # A single run is enough to check the smoke-test path.
             if smoke and number > 1:
                 break
             path = root / "View_2" / method / f"run_{number}"

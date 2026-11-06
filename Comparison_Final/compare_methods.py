@@ -1,8 +1,7 @@
-"""
-Final comparison of all LFW face-verification methods (View 2).
+"""Compare saved View 2 results across the LFW face-verification methods.
 
-Reads only the saved View 2 results of every model folder; nothing is trained or
-re-tuned. Run from the repository root:
+This script reads existing results; it does not train models or tune settings.
+Run it from the repository root:
 
     python Comparison_Final/compare_methods.py
 
@@ -13,9 +12,7 @@ Outputs (all in Comparison_Final/):
     training_cost.csv / .md        training time, epochs, memory, hardware
     view1_ablations.csv / .md      View 1 hyperparameter sweeps as recorded
     roc_combined.png / .pdf        ROC curves, log FAR axis, restricted Siamese separate
-    verification_report.md         every consistency check and its result
-
-Every check that fails is reported, never silently corrected.
+    verification_report.md         results of the consistency checks
 """
 
 import csv
@@ -23,7 +20,6 @@ import json
 import sys
 from pathlib import Path
 
-# torch before scikit-learn / scipy: avoids an OpenMP clash in Anaconda on macOS.
 import torch  # noqa: F401
 
 import numpy as np
@@ -42,9 +38,7 @@ HELD_OUT_SCHEME = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)]
 TOLERANCE = 1e-9
 
 
-# ============================================================
-# Methods (paths and how each team member recorded its View 1 selection)
-# ============================================================
+# Result paths and selected View 1 settings.
 
 METHODS = [
     {"key": "softmax", "label": "Softmax baseline", "protocol": "Unrestricted",
@@ -106,8 +100,7 @@ METHODS = [
      "setting": lambda s: f"s={s['selected_from_view1']['scale']:g}, m={s['selected_from_view1']['margin']}"},
 ]
 
-# Categorical palette (validated: adjacent CVD ΔE ≥ 9, normal-vision ΔE ≥ 19).
-# Colour follows the method; line style is a second, non-colour cue.
+# Colors and line styles distinguish methods in the ROC plot.
 STYLE = {
     "softmax": ("#2a78d6", (0, ())),
     "center_loss": ("#eb6834", (0, (6, 2))),
@@ -120,9 +113,7 @@ STYLE = {
 }
 
 
-# ============================================================
-# Small helpers
-# ============================================================
+# CSV and table helpers.
 
 def read_csv(path):
     with open(path, newline="", encoding="utf-8") as file:
@@ -156,14 +147,13 @@ def read_scores(path, extra_column=None):
 
 
 def independent_thresholds(scores, labels, folds):
-    """Re-derive each fold's accuracy-maximizing threshold from the other nine folds,
-    without the shared helper. Ties go to the highest threshold, as in Common."""
+    """Independently compute each fold's threshold from the other nine folds."""
     result = []
     for fold in range(1, 11):
         test = folds == fold
         s, y = scores[~test], labels[~test]
         candidates = np.unique(s)[::-1]
-        # accuracy of "same if score >= t" for every candidate t, via cumulative counts
+        # Cumulative counts give accuracy for each candidate threshold.
         order = np.argsort(-s, kind="stable")
         s_sorted, y_sorted = s[order], y[order]
         positives_above = np.cumsum(y_sorted)
@@ -172,7 +162,7 @@ def independent_thresholds(scores, labels, folds):
         tp = positives_above[last_index]
         fp = negatives_above[last_index]
         accuracy = (tp + ((1 - y).sum() - fp)) / len(y)
-        all_different = (1 - y).sum() / len(y)          # threshold above every score
+        all_different = (1 - y).sum() / len(y)  # Threshold above every score.
         best = int(np.argmax(accuracy))
         threshold = (float(np.nextafter(s.max(), np.inf)) if all_different > accuracy[best]
                      else float(candidates[best]))
@@ -181,9 +171,7 @@ def independent_thresholds(scores, labels, folds):
     return result
 
 
-# ============================================================
-# Verification of one method
-# ============================================================
+# Verify each method's results.
 
 def verify_method(method, manifest_rows, view2_images):
     folder = ROOT / method["dir"]
@@ -195,7 +183,7 @@ def verify_method(method, manifest_rows, view2_images):
                        "result": "PASS" if ok else "FAIL", "detail": detail})
         return ok
 
-    # --- pair-level submission file ---
+    # Check the combined pair-score file against the official manifest.
     rows, columns = read_scores(folder / "pair_scores.csv")
     check("pair_scores.csv has exactly fold,img1,img2,label,score",
           columns == ["fold", "img1", "img2", "label", "score"], str(columns))
@@ -209,7 +197,7 @@ def verify_method(method, manifest_rows, view2_images):
                    for f in range(1, 11))
     check("each fold: 600 pairs, 300 genuine + 300 impostor", balanced)
 
-    # --- fold assignment: five runs, each scoring exactly its two held-out folds ---
+    # Check that each run scored only its assigned held-out folds.
     fold_to_run = {int(k): v for k, v in summary["fold_to_run"].items()}
     expected = {f: j for j, pair in enumerate(HELD_OUT_SCHEME, 1) for f in pair}
     check("summary fold_to_run = (1,2),(3,4),(5,6),(7,8),(9,10) scheme",
@@ -229,7 +217,7 @@ def verify_method(method, manifest_rows, view2_images):
           [(r["fold"], r["img1"], r["img2"], r["label"], r["score"]) for r in run_rows] ==
           [(r["fold"], r["img1"], r["img2"], r["label"], r["score"]) for r in rows])
 
-    # --- training data isolation, re-derived from the image manifest ---
+    # Recount training identities and images from the manifest.
     for run_number, held_out in enumerate(HELD_OUT_SCHEME, 1):
         data = json.loads((folder / f"run_{run_number}" / "run_complete.json").read_text())["training_data"]
         overlap = data.get("evaluation_identity_overlap", data.get("held_out_identity_overlap"))
@@ -254,7 +242,7 @@ def verify_method(method, manifest_rows, view2_images):
               overlap == 0 and tuple(recorded) == tuple(expected_n),
               f"recorded {recorded}, expected {expected_n}, overlap {overlap}")
 
-    # --- metrics recomputed with the shared evaluation code ---
+    # Recompute metrics from the saved pair scores.
     recomputed = evaluate_view2(rows, score_key="score", higher_is_same=True)
     saved = summary["cosine"]
     metric_keys = ["accuracy_mean", "accuracy_std", "auc", "eer", "tar_at_far_0.01"]
@@ -287,7 +275,7 @@ def verify_method(method, manifest_rows, view2_images):
           genuine_higher and recomputed["auc"] > 0.5 and scores.min() >= -1 - 1e-6 and scores.max() <= 1 + 1e-6,
           f"genuine {scores[labels == 1].mean():.3f}, impostor {scores[labels == 0].mean():.3f}")
 
-    # --- squared Euclidean distance (Siamese and Triplet) ---
+    # Check squared Euclidean results for methods that report them.
     l2_result = None
     if method.get("has_l2"):
         l2_rows, l2_columns = read_scores(folder / "pair_scores_squared_l2.csv")
@@ -310,7 +298,7 @@ def verify_method(method, manifest_rows, view2_images):
                   and abs(float(f["threshold"]) - r["threshold"]) < 1e-6
                   for f, r in zip(l2_fold_file, l2_result["folds"])))
 
-    # --- View 1 selection as recorded (no re-selection here) ---
+    # Confirm that View 2 used the top-ranked View 1 settings.
     tuning = [r for r in read_csv(ROOT / method["tuning"])
               if all(r[k] == v for k, v in method["tuning_filter"].items())]
     rank_1 = [r for r in tuning if r[method["rank_column"]] == "1"]
@@ -330,9 +318,7 @@ def verify_method(method, manifest_rows, view2_images):
             "folds": folds, "cosine": recomputed, "squared_l2": l2_result, "checks": checks}
 
 
-# ============================================================
-# Outputs
-# ============================================================
+# Build comparison tables and reports.
 
 def comparison_table(methods, results):
     rows = []

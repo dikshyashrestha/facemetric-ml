@@ -1,20 +1,15 @@
 """
-Center Loss (Model 3) and the plain softmax baseline
-Applied Deep Learning Project 1 - Deep Metric Learning for Face Verification on LFW
+Train and evaluate the softmax and center-loss models on LFW.
 
-Variants
-    softmax     - cross-entropy only (lambda = 0). This is the project's plain-softmax baseline.
-    center_loss - cross-entropy + lambda * (1/2) ||f(x) - c_y||^2   (Wen et al., 2016).
+The softmax variant uses cross-entropy alone. The center-loss variant adds
+lambda * (1/2) * ||f(x) - c_y||^2, following Wen et al. (2016). Set STAGE
+below to run a smoke test, tune settings on View 1, or evaluate on View 2.
 
-Stages (set STAGE below, then run from the repository root:
-        python -m Model_3_Center.center_loss)
-    smoke_test   - a few batches of every step; outputs go to Model_3_Center/outputs/ (gitignored).
-    view1_tuning - lambda / learning-rate grid on View 1 (peopleDevTrain -> pairsDevTest validation).
-    view2_final  - five fresh training runs per variant, holding out folds
-                   (1,2), (3,4), (5,6), (7,8), (9,10), then official 10-fold evaluation.
+Run from the repository root with:
+    python -m Model_3_Center.center_loss
 
-Every run writes its results after each epoch and resumes from the last finished
-epoch if interrupted. Finished runs are skipped when the script is started again.
+Results are saved each epoch. Interrupted runs resume from their last checkpoint,
+and completed runs are skipped when restarted.
 """
 
 import csv
@@ -27,7 +22,6 @@ import time
 from collections import Counter
 from pathlib import Path
 
-# torch must be imported before scikit-learn (same OpenMP issue as Model 1).
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -57,31 +51,28 @@ from Common.model_utils import (
 )
 
 
-# ============================================================
-# Configuration (edit these values)
-# ============================================================
+# Training configuration
 
-STAGE = "view2_final"          # "smoke_test", "view1_tuning" or "view2_final"
+STAGE = "view2_final"          # Choose "smoke_test", "view1_tuning", or "view2_final".
 VARIANTS = ["softmax", "center_loss"]
 
-SEED = 42                     # same as Model 1
-EPOCHS = 30                   # team standard training budget
-BATCH_SIZE = 64               # images per step (classification needs many classes per batch)
+SEED = 42                     # Shared by each run for reproducibility.
+EPOCHS = 30                   # Epochs per run.
+BATCH_SIZE = 64               # Number of images in each training batch.
 NUM_WORKERS = 0
-MIN_IMAGES_PER_CLASS = 2      # PDF 4.3: only identities with >= 2 images are classes
+MIN_IMAGES_PER_CLASS = 2      # Ignore identities with fewer than two training images.
 
-# View 1 grid
+# View 1 search space
 LAMBDAS = {
     "softmax": [0.0],
     "center_loss": [0.001, 0.003, 0.01, 0.03],
 }
-CENTER_ALPHA = 0.5            # center update rate (paper value)
-LEARNING_RATES = [1e-4]       # same optimizer settings as Model 1
-WEIGHT_DECAY = 5e-4           # AdamW decoupled weight decay
+CENTER_ALPHA = 0.5            # Center update rate from the paper.
+LEARNING_RATES = [1e-4]       # Shared learning rate for all variants.
+WEIGHT_DECAY = 5e-4           # AdamW weight decay.
 ADAMW_BETAS = (0.9, 0.999)
 
-# Fill these in after View 1, from results/View_1/tuning_summary.csv (rank 1 per variant).
-# Example: {"lambda": 0.003, "learning_rate": 1e-4, "epochs": 30}
+# Best View 1 settings for each variant.
 FINAL_CONFIG = {
     "softmax": {"lambda": 0.0, "learning_rate": 1e-4, "epochs": 30},
     "center_loss": {"lambda": 0.01, "learning_rate": 1e-4, "epochs": 30},
@@ -89,26 +80,23 @@ FINAL_CONFIG = {
 
 VIEW2_HELD_OUT = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)]
 
-# Smoke test settings
+# Smoke-test settings
 SMOKE_BATCHES = 3
 SMOKE_EPOCHS = 2
 SMOKE_VAL_PAIRS = 64
 
 MODEL_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = MODEL_DIR / "results"
-SMOKE_DIR = MODEL_DIR / "outputs" / "smoke_test"      # gitignored
-CHECKPOINT_DIR = MODEL_DIR / "checkpoints"            # gitignored
+SMOKE_DIR = MODEL_DIR / "outputs" / "smoke_test"      # Gitignored.
+CHECKPOINT_DIR = MODEL_DIR / "checkpoints"            # Gitignored.
 
 
-# ============================================================
 # Center loss
-# ============================================================
 
 class CenterLoss(nn.Module):
-    """L_c = (1/2) ||f(x) - c_y||^2, averaged over the batch.
+    """Compute the mean center loss, (1/2) * ||f(x) - c_y||^2.
 
-    The centers are a buffer, so the optimizer never changes them.
-    They are moved by hand after each batch (update_centers).
+    Centers are stored as a buffer and updated separately after each batch.
     """
 
     def __init__(self, num_classes):
@@ -121,7 +109,7 @@ class CenterLoss(nn.Module):
 
     @torch.no_grad()
     def update_centers(self, features, labels):
-        # c_j = c_j - alpha * sum(c_j - x_i) / (1 + n_j)
+        # Move each center toward the features assigned to its class.
         for label in labels.unique():
             mask = labels == label
             delta = (self.centers[label] - features[mask]).sum(dim=0) / (1 + mask.sum())
@@ -134,16 +122,14 @@ def mean_inter_center_distance(centers):
     return (torch.cdist(centers, centers).sum() / (n * (n - 1))).item()
 
 
-# ============================================================
 # Training data
-# ============================================================
 
 def image_identity(image_path):
     return image_path.split("/")[0]
 
 
 def load_training_data(stage, held_out):
-    """Training identities with >= 2 images, relabelled 0..C-1."""
+    """Load eligible identities and remap their labels to contiguous class indices."""
     if stage == "view1":
         dataset = LFWIdentityDataset(split="view1_train", train=True)
     else:
@@ -165,7 +151,7 @@ def load_training_data(stage, held_out):
 
 
 def check_training_data(dataset, stage, held_out):
-    """Stop before training if any evaluation identity is in the training data."""
+    """Check that no evaluation identity appears in the training split."""
     train_ids = {row["identity"] for row in dataset.samples}
 
     if stage == "view1":
@@ -197,9 +183,7 @@ def check_training_data(dataset, stage, held_out):
     }
 
 
-# ============================================================
-# Saving helpers
-# ============================================================
+# Output helpers
 
 def write_csv(path, rows):
     path = Path(path)
@@ -279,12 +263,10 @@ def plot_training_curves(run_dir, history, title):
     plt.close(fig)
 
 
-# ============================================================
-# One training run (View 1 candidate or one View 2 run)
-# ============================================================
+# One training run
 
 def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
-    """settings = {"variant", "lambda", "learning_rate", "epochs"}"""
+    """Train one configuration and save its results."""
     run_dir = Path(run_dir)
     complete_file = run_dir / "run_complete.json"
     if complete_file.is_file():
@@ -299,7 +281,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
     epochs = settings["epochs"]
     run_number = VIEW2_HELD_OUT.index(held_out) + 1 if held_out else None
 
-    # ---------- data ----------
     train_dataset, num_classes = load_training_data(stage, held_out)
     data_info = check_training_data(train_dataset, stage, held_out)
 
@@ -311,7 +292,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             validation_dataset.samples = (validation_dataset.samples[:half] +
                                           validation_dataset.samples[-half:])
 
-    # ---------- fresh model, classifier, centers, optimizer ----------
     model = FaceEmbeddingNet().to(device)
     classifier = nn.Linear(512, num_classes).to(device)
     center_loss = CenterLoss(num_classes).to(device)
@@ -370,7 +350,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
         config["smoke_test"] = {"batches_per_epoch": SMOKE_BATCHES,
                                 "validation_pairs": SMOKE_VAL_PAIRS}
 
-    # ---------- resume if a checkpoint exists ----------
     history = []
     ckpt_file = checkpoint_path(run_dir)
 
@@ -397,7 +376,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
     print(f"\n=== {run_dir.relative_to(MODEL_DIR)} | lambda={lam} lr={settings['learning_rate']} "
           f"| held out {list(held_out)} | {data_info}")
 
-    # ---------- epochs ----------
     for epoch in range(len(history) + 1, epochs + 1):
         generator = torch.Generator().manual_seed(SEED * 1000 + epoch)
         loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True,
@@ -425,8 +403,8 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             loss.backward()
             optimizer.step()
 
-            # distance to own center before the update, then move the centers
-            # (centers are also tracked when lambda = 0, for comparison)
+            # Measure distances before updating the centers. The softmax baseline
+            # also tracks centers so its training metrics can be compared.
             features = features.detach()
             intra = (features - center_loss.centers[labels]).norm(dim=1).mean()
             center_loss.update_centers(features, labels)
@@ -468,7 +446,7 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             "peak_gpu_allocated_mib": report.get("peak_gpu_allocated_mib", ""),
         }
 
-        # ---------- View 1 validation (tuning metric) ----------
+        # Use View 1 validation scores to compare tuning settings.
         if validation_dataset is not None:
             start = time.perf_counter()
             scored = score_pair_dataset(model, validation_dataset, device, batch_size=32)
@@ -512,7 +490,7 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
               f"inter {row['mean_inter_center_distance']:.2f}"
               f"{validation_text} | {row['epoch_time_seconds']:.0f}s", flush=True)
 
-    # ---------- View 2: score both held-out folds ----------
+    # Score the held-out pairs for this run.
     if stage == "view2":
         held_out_scores = []
         for fold in held_out:
@@ -520,7 +498,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             held_out_scores += score_pair_dataset(model, fold_dataset, device, batch_size=32)
         write_csv(run_dir / "heldout_scores.csv", held_out_scores)
 
-    # ---------- finish ----------
     validated = [h for h in history if h["validation_accuracy"] != ""]
     best = max(validated, key=lambda h: h["validation_accuracy"]) if validated else None
     memory = [h["peak_sampled_mps_driver_mib"] for h in history
@@ -556,14 +533,12 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
                          f"Center loss {variant} | {config['stage']} | lambda {lam}")
     save_json(complete_file, summary)
 
-    # Trained weights are not kept: each run is independent and View 2 forbids reuse.
+    # Remove the checkpoint before the next run starts from fresh weights.
     ckpt_file.unlink(missing_ok=True)
     return summary
 
 
-# ============================================================
-# View 1: hyperparameter tuning
-# ============================================================
+# View 1 tuning
 
 def write_tuning_summary(root):
     rows = []
@@ -585,7 +560,7 @@ def write_tuning_summary(root):
             "run_folder": file.parent.name,
         })
 
-    # Selection criterion: highest final-epoch View 1 accuracy, ties broken by AUC.
+    # Rank by final-epoch accuracy, with AUC as the tie-breaker.
     rows.sort(key=lambda r: (r["variant"], -r["final_validation_accuracy"],
                              -r["final_validation_auc"]))
     rank = Counter()
@@ -617,12 +592,10 @@ def run_view1_tuning(smoke=False):
                 write_tuning_summary(root)
 
 
-# ============================================================
-# View 2: five-run final evaluation
-# ============================================================
+# View 2 evaluation
 
 def fold_table(rows, result):
-    """fold,threshold,correct,n_pairs,accuracy from evaluate_view2's thresholds."""
+    """Build per-fold accuracy rows using evaluate_view2's thresholds."""
     table = []
     for fold_result in result["folds"]:
         fold_rows = [r for r in rows if r["fold"] == fold_result["fold"]]
@@ -680,7 +653,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     if len(rows) != 6000 or scored != manifest:
         raise RuntimeError("Scored pairs do not match the 6,000 official View 2 pairs")
 
-    # Official 10-fold evaluation (thresholds from the other nine folds' scores).
+    # Select each fold's threshold from scores in the other nine folds.
     cosine = evaluate_view2(rows, score_key="score", higher_is_same=True)
 
     save_pair_scores(rows, variant_dir / "pair_scores.csv", score_key="score")
@@ -698,7 +671,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     save_score_histogram(rows, cosine_table, variant_dir / "score_histogram.png",
                          f"Center loss {variant}: View 2 out-of-fold scores")
 
-    # Error analysis data: image paths and scores only, no face images.
+    # Record paths and scores for error analysis, without copying image data.
     fold_thresholds = {f["fold"]: f["threshold"] for f in cosine_table}
     errors = []
     for r in rows:
@@ -757,7 +730,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
 
 
 def view1_selection(variant, final):
-    """Return the View 1 tuning row FINAL_CONFIG was frozen from; stop if they disagree."""
+    """Check FINAL_CONFIG against the top-ranked View 1 row and return that row."""
     with (RESULTS_DIR / "View_1" / "tuning_summary.csv").open(newline="", encoding="utf-8") as file:
         rows = [row for row in csv.DictReader(file) if row["variant"] == variant]
 

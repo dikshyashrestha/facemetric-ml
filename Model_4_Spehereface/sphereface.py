@@ -1,22 +1,16 @@
 """
-SphereFace / A-Softmax (Model 4)
-Applied Deep Learning Project 1 - Deep Metric Learning for Face Verification on LFW
+SphereFace (A-Softmax) training and evaluation for LFW face verification.
 
-Variants (View 1)
-    sphereface   - multiplicative angular margin m = 2, 3, 4 with lambda annealing.
-                   The best one is the main SphereFace result on View 2.
-    m1_baseline  - m = 1: normalized-weight softmax, no margin (ablation, View 1 only).
-    no_annealing - m = 4 without annealing (ablation, View 1 only).
+View 1 tests margins 2, 3, and 4 with annealing, plus an m=1 baseline and an
+m=4 run without annealing. View 2 evaluates the selected SphereFace setting
+across five runs, each holding out a pair of folds.
 
-Stages (set STAGE below, then run from the repository root:
-        python -m Model_4_Spehereface.sphereface)
-    smoke_test   - a few batches of every step; outputs go to Model_4_Spehereface/outputs/ (gitignored).
-    view1_tuning - margin / learning-rate grid on View 1 (peopleDevTrain -> pairsDevTest validation).
-    view2_final  - five fresh training runs, holding out folds
-                   (1,2), (3,4), (5,6), (7,8), (9,10), then official 10-fold evaluation.
+Run from the repository root with:
+    python -m Model_4_Spehereface.sphereface
 
-Every run writes its results after each epoch and resumes from the last finished
-epoch if interrupted. Finished runs are skipped when the script is started again.
+Set STAGE to "smoke_test", "view1_tuning", or "view2_final". Runs save results
+after each epoch and resume from the last checkpoint if interrupted.
+Completed runs are skipped when the script is restarted.
 """
 
 import csv
@@ -29,7 +23,6 @@ import time
 from collections import Counter
 from pathlib import Path
 
-# torch must be imported before scikit-learn (same OpenMP issue as Model 1).
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -59,63 +52,58 @@ from Common.model_utils import (
 )
 
 
-# ============================================================
-# Configuration (edit these values)
-# ============================================================
+# Configuration
 
-STAGE = "view2_final"          # "smoke_test", "view1_tuning" or "view2_final"
+STAGE = "view2_final"          # Choose "smoke_test", "view1_tuning", or "view2_final".
 
-SEED = 42                     # same as Model 1
-EPOCHS = 30                   # team standard training budget
-BATCH_SIZE = 64               # images per step (classification needs many classes per batch)
+SEED = 42                     # Shared across runs for reproducibility.
+EPOCHS = 30                   # Epochs per run.
+BATCH_SIZE = 64               # Number of images in each training batch.
 NUM_WORKERS = 0
-MIN_IMAGES_PER_CLASS = 2      # PDF 4.3: only identities with >= 2 images are classes
+MIN_IMAGES_PER_CLASS = 2      # Ignore identities with fewer than two training images.
 
-# View 1 grid: variant -> list of (margin m, use annealing)
+# View 1 settings: each variant maps to (margin, use annealing).
 VIEW1_RUNS = {
     "sphereface": [(4, True), (3, True), (2, True)],
     "m1_baseline": [(1, True)],
     "no_annealing": [(4, False)],
 }
-LEARNING_RATES = [1e-4]       # same optimizer settings as Model 1
-WEIGHT_DECAY = 5e-4           # AdamW decoupled weight decay
+LEARNING_RATES = [1e-4]       # Shared learning rate for all variants.
+WEIGHT_DECAY = 5e-4           # AdamW weight decay
 ADAMW_BETAS = (0.9, 0.999)
 
-# Annealing (original SphereFace schedule), updated every batch:
+# Original SphereFace annealing schedule, updated after each batch:
 # lambda = max(LAMBDA_MIN, LAMBDA_BASE * (1 + LAMBDA_GAMMA * iteration) ** -LAMBDA_POWER)
 LAMBDA_BASE = 1000.0
 LAMBDA_GAMMA = 0.12
 LAMBDA_POWER = 1.0
 LAMBDA_MIN = 5.0
 
-# Only this variant goes to View 2.
+# View 2 evaluates the tuned SphereFace variant, not the View 1 ablations.
 VIEW2_VARIANTS = ["sphereface"]
 
-# Fill this in after View 1, from results/View_1/tuning_summary.csv (rank 1 of "sphereface").
-# Example: {"margin": 4, "annealing": True, "learning_rate": 1e-4, "epochs": 30}
+# Selected settings from View 1 tuning.
 FINAL_CONFIG = {
     "sphereface": {"margin": 3, "annealing": True, "learning_rate": 1e-4, "epochs": 30},
 }
 
 VIEW2_HELD_OUT = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)]
 
-# Smoke test settings
+# Smoke-test limits
 SMOKE_BATCHES = 3
 SMOKE_EPOCHS = 2
 SMOKE_VAL_PAIRS = 64
 
 MODEL_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = MODEL_DIR / "results"
-SMOKE_DIR = MODEL_DIR / "outputs" / "smoke_test"      # gitignored
-CHECKPOINT_DIR = MODEL_DIR / "checkpoints"            # gitignored
+SMOKE_DIR = MODEL_DIR / "outputs" / "smoke_test"      # Smoke-test output is gitignored.
+CHECKPOINT_DIR = MODEL_DIR / "checkpoints"            # Checkpoints are gitignored.
 
 
-# ============================================================
 # SphereFace head (A-Softmax)
-# ============================================================
 
 def cos_m_theta(cos, m):
-    # cos(m * theta) from cos(theta) with Chebyshev polynomials
+    # Chebyshev expansion for cos(m * theta).
     if m == 1:
         return cos
     if m == 2:
@@ -132,10 +120,11 @@ def annealing_lambda(iteration, annealing):
 
 
 class SphereFaceHead(nn.Module):
-    """Normalized weights, zero bias: logit_j = ||x|| cos(theta_j).
+    """Apply the angular-margin classifier with normalized weights and zero bias.
 
-    True class: psi(theta) = (-1)^k cos(m theta) - 2k,  theta in [k pi/m, (k+1) pi/m],
-    blended as (lambda cos(theta) + psi(theta)) / (1 + lambda) for annealing.
+    The target logit uses psi(theta) = (-1)^k cos(m theta) - 2k, where
+    theta is in [k*pi/m, (k+1)*pi/m]. Annealing blends it with cos(theta):
+    (lambda*cos(theta) + psi(theta)) / (1 + lambda).
     """
 
     def __init__(self, num_classes, margin):
@@ -160,16 +149,14 @@ class SphereFaceHead(nn.Module):
         return logits, cos
 
 
-# ============================================================
 # Training data
-# ============================================================
 
 def image_identity(image_path):
     return image_path.split("/")[0]
 
 
 def load_training_data(stage, held_out):
-    """Training identities with >= 2 images, relabelled 0..C-1."""
+    """Load eligible identities and remap their labels to contiguous class indices."""
     if stage == "view1":
         dataset = LFWIdentityDataset(split="view1_train", train=True)
     else:
@@ -191,7 +178,7 @@ def load_training_data(stage, held_out):
 
 
 def check_training_data(dataset, stage, held_out):
-    """Stop before training if any evaluation identity is in the training data."""
+    """Check that no evaluation identity appears in the training split."""
     train_ids = {row["identity"] for row in dataset.samples}
 
     if stage == "view1":
@@ -223,9 +210,7 @@ def check_training_data(dataset, stage, held_out):
     }
 
 
-# ============================================================
-# Saving helpers
-# ============================================================
+# Output helpers
 
 def write_csv(path, rows):
     path = Path(path)
@@ -306,12 +291,10 @@ def plot_training_curves(run_dir, history, title):
     plt.close(fig)
 
 
-# ============================================================
-# One training run (View 1 candidate or one View 2 run)
-# ============================================================
+# One training run
 
 def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
-    """settings = {"variant", "margin", "annealing", "learning_rate", "epochs"}"""
+    """Train one configuration and save its results."""
     run_dir = Path(run_dir)
     complete_file = run_dir / "run_complete.json"
     if complete_file.is_file():
@@ -327,7 +310,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
     epochs = settings["epochs"]
     run_number = VIEW2_HELD_OUT.index(held_out) + 1 if held_out else None
 
-    # ---------- data ----------
     train_dataset, num_classes = load_training_data(stage, held_out)
     data_info = check_training_data(train_dataset, stage, held_out)
 
@@ -339,7 +321,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             validation_dataset.samples = (validation_dataset.samples[:half] +
                                           validation_dataset.samples[-half:])
 
-    # ---------- fresh model, head, optimizer ----------
     model = FaceEmbeddingNet().to(device)
     head = SphereFaceHead(num_classes, margin).to(device)
     optimizer = torch.optim.AdamW(list(model.parameters()) + list(head.parameters()),
@@ -402,7 +383,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
         config["smoke_test"] = {"batches_per_epoch": SMOKE_BATCHES,
                                 "validation_pairs": SMOKE_VAL_PAIRS}
 
-    # ---------- resume if a checkpoint exists ----------
     history = []
     iteration = 0
     ckpt_file = checkpoint_path(run_dir)
@@ -430,7 +410,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
     print(f"\n=== {run_dir.relative_to(MODEL_DIR)} | m={margin} annealing={annealing} "
           f"lr={settings['learning_rate']} | held out {list(held_out)} | {data_info}")
 
-    # ---------- epochs ----------
     for epoch in range(len(history) + 1, epochs + 1):
         generator = torch.Generator().manual_seed(SEED * 1000 + epoch)
         loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True,
@@ -495,7 +474,7 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             "peak_gpu_allocated_mib": report.get("peak_gpu_allocated_mib", ""),
         }
 
-        # ---------- View 1 validation (tuning metric) ----------
+        # These metrics are used to select the View 1 configuration.
         if validation_dataset is not None:
             start = time.perf_counter()
             scored = score_pair_dataset(model, validation_dataset, device, batch_size=32)
@@ -537,7 +516,7 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
               f"| lambda {lam:.1f} | angle {row['mean_target_angle_degrees']:.1f} deg"
               f"{validation_text} | {row['epoch_time_seconds']:.0f}s", flush=True)
 
-    # ---------- View 2: score both held-out folds ----------
+    # Collect scores for the folds assigned to this run.
     if stage == "view2":
         held_out_scores = []
         for fold in held_out:
@@ -545,7 +524,6 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
             held_out_scores += score_pair_dataset(model, fold_dataset, device, batch_size=32)
         write_csv(run_dir / "heldout_scores.csv", held_out_scores)
 
-    # ---------- finish ----------
     validated = [h for h in history if h["validation_accuracy"] != ""]
     best = max(validated, key=lambda h: h["validation_accuracy"]) if validated else None
     memory = [h["peak_sampled_mps_driver_mib"] for h in history
@@ -582,14 +560,12 @@ def train_one_run(run_dir, stage, settings, held_out=(), smoke=False):
                          f"| annealing {annealing}")
     save_json(complete_file, summary)
 
-    # Trained weights are not kept: each run is independent and View 2 forbids reuse.
+    # Remove the checkpoint so the next run starts from scratch.
     ckpt_file.unlink(missing_ok=True)
     return summary
 
 
-# ============================================================
-# View 1: hyperparameter tuning
-# ============================================================
+# View 1 tuning
 
 def write_tuning_summary(root):
     rows = []
@@ -611,7 +587,7 @@ def write_tuning_summary(root):
             "run_folder": file.parent.name,
         })
 
-    # Selection criterion: highest final-epoch View 1 accuracy, ties broken by AUC.
+    # Accuracy determines the rank; AUC breaks ties.
     rows.sort(key=lambda r: (r["variant"], -r["final_validation_accuracy"],
                              -r["final_validation_auc"]))
     rank = Counter()
@@ -644,12 +620,10 @@ def run_view1_tuning(smoke=False):
                 write_tuning_summary(root)
 
 
-# ============================================================
-# View 2: five-run final evaluation
-# ============================================================
+# View 2 evaluation
 
 def fold_table(rows, result):
-    """fold,threshold,correct,n_pairs,accuracy from evaluate_view2's thresholds."""
+    """Build per-fold accuracy rows using evaluate_view2's thresholds."""
     table = []
     for fold_result in result["folds"]:
         fold_rows = [r for r in rows if r["fold"] == fold_result["fold"]]
@@ -707,7 +681,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     if len(rows) != 6000 or scored != manifest:
         raise RuntimeError("Scored pairs do not match the 6,000 official View 2 pairs")
 
-    # Official 10-fold evaluation (thresholds from the other nine folds' scores).
+    # Each fold uses a threshold selected from the other nine folds.
     cosine = evaluate_view2(rows, score_key="score", higher_is_same=True)
 
     save_pair_scores(rows, variant_dir / "pair_scores.csv", score_key="score")
@@ -725,7 +699,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     save_score_histogram(rows, cosine_table, variant_dir / "score_histogram.png",
                          f"SphereFace m={final['margin']}: View 2 out-of-fold scores")
 
-    # Error analysis data: image paths and scores only, no face images.
+    # Keep paths and scores for review; the error report does not include image data.
     fold_thresholds = {f["fold"]: f["threshold"] for f in cosine_table}
     errors = []
     for r in rows:
@@ -785,7 +759,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
 
 
 def view1_selection(variant, final):
-    """Return the View 1 tuning row FINAL_CONFIG was frozen from; stop if they disagree."""
+    """Check FINAL_CONFIG against the top-ranked View 1 row and return that row."""
     with (RESULTS_DIR / "View_1" / "tuning_summary.csv").open(newline="", encoding="utf-8") as file:
         rows = [row for row in csv.DictReader(file) if row["variant"] == variant]
 

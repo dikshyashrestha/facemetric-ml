@@ -1,20 +1,15 @@
 """
-Siamese Network with Contrastive Loss (Model 1)
-Applied Deep Learning Project 1 - Deep Metric Learning for Face Verification on LFW
+Train and evaluate the Siamese contrastive-loss model on LFW.
 
-Variants
-    restricted   - LFW image-restricted protocol: only the official labelled training pairs.
-    unrestricted - pairs generated freely from training-identity labels, balanced 1:1.
+The restricted variant uses the official training pairs. The unrestricted
+variant samples balanced pairs from training identities. Set STAGE below to
+run a smoke test, tune settings on View 1, or evaluate on View 2.
 
-Stages (set STAGE below, then run from the repository root:
-        python -m Model_1_Siamese.siamese)
-    smoke_test   - a few batches of every step; outputs go to Model_1_Siamese/outputs/ (gitignored).
-    view1_tuning - margin / learning-rate grid on View 1 (train -> pairsDevTest validation).
-    view2_final  - five fresh training runs per variant, holding out folds
-                   (1,2), (3,4), (5,6), (7,8), (9,10), then official 10-fold evaluation.
+Run from the repository root with:
+    python -m Model_1_Siamese.siamese
 
-Every run writes its results after each epoch and resumes from the last finished
-epoch if interrupted. Finished runs are skipped when the script is started again.
+Results are saved each epoch. Interrupted runs resume from their last checkpoint,
+and completed runs are skipped when restarted.
 """
 
 import csv
@@ -27,8 +22,6 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
-# torch must be imported before scikit-learn: in the Anaconda environment the
-# reverse order loads two OpenMP runtimes and segfaults inside torchvision.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -58,57 +51,52 @@ from Common.model_utils import (
 )
 
 
-# ============================================================
-# Configuration (edit these values)
-# ============================================================
+# Training configuration
 
-STAGE = "view2_final"         # "smoke_test", "view1_tuning" or "view2_final"
+STAGE = "view2_final"         # Choose "smoke_test", "view1_tuning", or "view2_final".
 VARIANTS = ["restricted", "unrestricted"]
 
-SEED = 42                     # used for every run and recorded in config.json
-EPOCHS = 30                   # team standard training budget
-BATCH_PAIRS = 16              # 8 genuine + 8 impostor pairs = 32 images per step
-NUM_WORKERS = 0               # image loading is ~2% of epoch time on the M1
+SEED = 42                     # Shared by each run and recorded in config.json.
+EPOCHS = 30                   # Epochs per run.
+BATCH_PAIRS = 16              # Each batch has 8 genuine and 8 impostor pairs.
+NUM_WORKERS = 0               # Image loading takes about 2% of epoch time on M1.
 
-# View 1 grid. Margin 1.0 runs first so the first run doubles as the pilot.
+# Start with margin 1.0 as a pilot run.
 MARGINS = [1.0, 0.5, 0.75, 1.25]
 LEARNING_RATES = [1e-4]
-WEIGHT_DECAY = 5e-4           # AdamW decoupled weight decay
+WEIGHT_DECAY = 5e-4           # AdamW weight decay.
 ADAMW_BETAS = (0.9, 0.999)
 
-# Frozen after View 1 tuning, from results/View_1/tuning_summary.csv (rank 1 per
-# variant: highest final-epoch View 1 accuracy, ties broken by AUC).
+# Best View 1 settings for each variant, ranked by accuracy then AUC.
 FINAL_CONFIG = {
-    "restricted": {"margin": 1.25, "learning_rate": 1e-4, "epochs": 30},    # View 1 acc 0.644, AUC 0.683
-    "unrestricted": {"margin": 1.25, "learning_rate": 1e-4, "epochs": 30},  # View 1 acc 0.625, AUC 0.650
+    "restricted": {"margin": 1.25, "learning_rate": 1e-4, "epochs": 30},    # View 1 accuracy 0.644, AUC 0.683.
+    "unrestricted": {"margin": 1.25, "learning_rate": 1e-4, "epochs": 30},  # View 1 accuracy 0.625, AUC 0.650.
 }
 
 VIEW1_TRAIN_PAIRS = 2200
-VIEW2_TRAIN_PAIRS = 4800      # 8 training folds x 600 pairs
+VIEW2_TRAIN_PAIRS = 4800      # Eight folds with 600 pairs each.
 VIEW2_HELD_OUT = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)]
 
-# Smoke test settings
+# Smoke-test settings
 SMOKE_BATCHES = 3
 SMOKE_EPOCHS = 2
 SMOKE_VAL_PAIRS = 64
 
 MODEL_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = MODEL_DIR / "results"
-SMOKE_DIR = MODEL_DIR / "outputs" / "smoke_test"      # gitignored
-CHECKPOINT_DIR = MODEL_DIR / "checkpoints"            # gitignored
+SMOKE_DIR = MODEL_DIR / "outputs" / "smoke_test"      # Gitignored.
+CHECKPOINT_DIR = MODEL_DIR / "checkpoints"            # Gitignored.
 
 
-# ============================================================
 # Contrastive loss
-# ============================================================
 
 class ContrastiveLoss(nn.Module):
-    """Hadsell, Chopra and LeCun (2006).
+    """Contrastive loss from Hadsell, Chopra, and LeCun (2006).
 
     L = y * d^2 + (1 - y) * max(0, m - d)^2,   d = ||f(x1) - f(x2)||
 
-    y = 1 for a genuine pair, 0 for an impostor pair. Embeddings are
-    L2-normalized before the loss (PDF section 5.1), so d is in [0, 2].
+    Labels are 1 for genuine pairs and 0 for impostor pairs. Embeddings are
+    L2-normalized before the loss, so distances range from 0 to 2.
     """
 
     def __init__(self, margin=1.0):
@@ -129,16 +117,14 @@ class ContrastiveLoss(nn.Module):
         return (positive_loss + negative_loss).mean()
 
 
-# ============================================================
 # Training data
-# ============================================================
 
 def image_identity(image_path):
     return image_path.split("/")[0]
 
 
 def restricted_training_pairs(stage, held_out):
-    """Official labelled pairs only. No identity names are used to make new pairs."""
+    """Load official labeled pairs without generating any additional pairs."""
     if stage == "view1":
         return read_manifest("view1_train_pairs.csv")
     return [
@@ -148,7 +134,7 @@ def restricted_training_pairs(stage, held_out):
 
 
 def identity_pools(stage, held_out):
-    """Images of each training identity, for unrestricted pair generation."""
+    """Group training image paths by identity for pair sampling."""
     if stage == "view1":
         rows = read_manifest("view1_train_images.csv")
     else:
@@ -165,11 +151,10 @@ def identity_pools(stage, held_out):
 
 
 def generate_unrestricted_pairs(pools, n_pairs, rng):
-    """Balanced 1:1 pairs from training identities.
+    """Sample balanced genuine and impostor pairs from training identities.
 
-    Genuine: an identity with >= 2 images (chosen uniformly), two different images.
-    Impostor: two different identities (chosen uniformly, singletons allowed),
-              one random image of each.
+    Genuine pairs use two distinct images of one identity. Impostor pairs use
+    images from two distinct identities; identities with one image are allowed.
     """
     identities = list(pools)
     multi_image = [identity for identity in identities if len(pools[identity]) >= 2]
@@ -195,7 +180,7 @@ def generate_unrestricted_pairs(pools, n_pairs, rng):
 
 
 def balanced_batches(rows, batch_pairs, rng):
-    """Shuffle, then give every batch the same number of genuine and impostor pairs."""
+    """Shuffle pairs into batches with equal genuine and impostor counts."""
     positives = [i for i, row in enumerate(rows) if int(row["label"]) == 1]
     negatives = [i for i, row in enumerate(rows) if int(row["label"]) == 0]
 
@@ -214,7 +199,7 @@ def balanced_batches(rows, batch_pairs, rng):
 
 
 def check_training_data(variant, stage, held_out, pairs=None, pools=None):
-    """Stop before training if any held-out identity or pair could reach the optimizer."""
+    """Check that the training data does not overlap the evaluation split."""
 
     if pairs is not None:
         train_ids = {image_identity(p) for row in pairs for p in (row["img1"], row["img2"])}
@@ -273,9 +258,7 @@ def check_training_data(variant, stage, held_out, pairs=None, pools=None):
     return info
 
 
-# ============================================================
-# Saving helpers
-# ============================================================
+# Output helpers
 
 def write_csv(path, rows):
     path = Path(path)
@@ -357,9 +340,7 @@ def plot_training_curves(run_dir, history, title):
     plt.close(fig)
 
 
-# ============================================================
-# One training run (View 1 candidate or one View 2 run)
-# ============================================================
+# One training run
 
 def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
                   held_out=(), run_number=None, smoke=False):
@@ -373,7 +354,6 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
     seed_everything(SEED)
     held_out = tuple(held_out)
 
-    # ---------- data ----------
     if variant == "restricted":
         pairs = restricted_training_pairs(stage, held_out)
         pools = None
@@ -390,7 +370,7 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
     n_pairs = VIEW1_TRAIN_PAIRS if stage == "view1" else VIEW2_TRAIN_PAIRS
     batches_per_epoch = math.ceil((n_pairs // 2) / (BATCH_PAIRS // 2))
 
-    # Reuse Common's pair loading and training transform (random flip per image).
+    # Use the shared pair loader and training-time image transforms.
     train_dataset = LFWPairDataset(split="view1_train", train=True)
     if pairs is not None:
         train_dataset.samples = pairs
@@ -403,7 +383,6 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
             validation_dataset.samples = (validation_dataset.samples[:half] +
                                           validation_dataset.samples[-half:])
 
-    # ---------- fresh model, optimizer, scheduler ----------
     model = FaceEmbeddingNet().to(device)
     loss_fn = ContrastiveLoss(margin=margin)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate,
@@ -465,7 +444,6 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
         config["smoke_test"] = {"batches_per_epoch": SMOKE_BATCHES,
                                 "validation_pairs": SMOKE_VAL_PAIRS}
 
-    # ---------- resume if a checkpoint exists ----------
     history = []
     updates = 0
     ckpt_file = checkpoint_path(run_dir)
@@ -492,7 +470,6 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
     print(f"\n=== {run_dir.relative_to(MODEL_DIR)} | {variant} | margin={margin} "
           f"lr={learning_rate} | held out {list(held_out)} | {data_info}")
 
-    # ---------- epochs ----------
     for epoch in range(len(history) + 1, epochs + 1):
         rng = np.random.default_rng([SEED, epoch])
         if variant == "unrestricted":
@@ -519,7 +496,7 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
 
             optimizer.zero_grad(set_to_none=True)
 
-            # Shared weights: one forward pass for both sides of every pair.
+            # Run both images through the shared network in one forward pass.
             embeddings = model(images, normalize=True)
             embedding1, embedding2 = embeddings[:n], embeddings[n:]
 
@@ -572,7 +549,7 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
             "peak_gpu_allocated_mib": report.get("peak_gpu_allocated_mib", ""),
         }
 
-        # ---------- View 1 validation (tuning metric) ----------
+        # Use View 1 validation scores to compare tuning settings.
         if validation_dataset is not None:
             start = time.perf_counter()
             scored = score_pair_dataset(model, validation_dataset, device, batch_size=32)
@@ -614,7 +591,7 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
               f"| d gen {row['genuine_dist_mean']:.3f} imp {row['impostor_dist_mean']:.3f}"
               f"{validation_text} | {row['epoch_time_seconds']:.0f}s", flush=True)
 
-    # ---------- View 2: score both held-out folds ----------
+    # Score the held-out pairs for this run.
     if stage == "view2":
         held_out_scores = []
         for fold in held_out:
@@ -622,7 +599,6 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
             held_out_scores += score_pair_dataset(model, fold_dataset, device, batch_size=32)
         write_csv(run_dir / "heldout_scores.csv", held_out_scores)
 
-    # ---------- finish ----------
     validated = [h for h in history if h["validation_accuracy"] != ""]
     best = max(validated, key=lambda h: h["validation_accuracy"]) if validated else None
     memory = [h["peak_sampled_mps_driver_mib"] for h in history
@@ -655,14 +631,12 @@ def train_one_run(run_dir, variant, stage, margin, learning_rate, epochs,
                          f"Siamese {variant} | {config['stage']} | margin {margin}")
     save_json(complete_file, summary)
 
-    # Trained weights are not kept: each run is independent and View 2 forbids reuse.
+    # Remove the checkpoint before the next run starts from fresh weights.
     ckpt_file.unlink(missing_ok=True)
     return summary
 
 
-# ============================================================
-# View 1: hyperparameter tuning
-# ============================================================
+# View 1 tuning
 
 def write_tuning_summary(root):
     rows = []
@@ -682,7 +656,7 @@ def write_tuning_summary(root):
             "run_folder": file.parent.name,
         })
 
-    # Selection criterion: highest final-epoch View 1 accuracy, ties broken by AUC.
+    # Rank by final-epoch accuracy, with AUC as the tie-breaker.
     rows.sort(key=lambda r: (r["variant"], -r["final_validation_accuracy"],
                              -r["final_validation_auc"]))
     rank = Counter()
@@ -713,12 +687,10 @@ def run_view1_tuning(smoke=False):
                 write_tuning_summary(root)
 
 
-# ============================================================
-# View 2: five-run final evaluation
-# ============================================================
+# View 2 evaluation
 
 def fold_table(rows, result, key, higher_is_same):
-    """fold,threshold,correct,n_pairs,accuracy from evaluate_view2's thresholds."""
+    """Build per-fold accuracy rows using evaluate_view2's thresholds."""
     table = []
     for fold_result in result["folds"]:
         fold_rows = [r for r in rows if r["fold"] == fold_result["fold"]]
@@ -784,7 +756,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     if len(rows) != 6000 or scored != manifest:
         raise RuntimeError("Scored pairs do not match the 6,000 official View 2 pairs")
 
-    # Official 10-fold evaluation (thresholds from the other nine folds' scores).
+    # Select each fold's threshold from scores in the other nine folds.
     cosine = evaluate_view2(rows, score_key="score", higher_is_same=True)
     squared_l2 = evaluate_view2(rows, score_key="squared_l2", higher_is_same=False)
 
@@ -799,7 +771,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     cos_scores = np.array([r["score"] for r in rows])
     distances = np.array([r["squared_l2"] for r in rows])
 
-    # For unit vectors, d^2 = 2 - 2 cos: confirm empirically.
+    # For unit vectors, squared distance equals 2 - 2 times cosine similarity.
     l2_vs_cos = float(np.max(np.abs(distances - (2 - 2 * cos_scores))))
 
     for key, scores, name in [("score", cos_scores, "roc_data.csv"),
@@ -816,7 +788,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
     save_score_histogram(rows, cosine_table, l2_table, variant_dir / "score_histogram.png",
                          f"Siamese {variant}: View 2 out-of-fold scores")
 
-    # Error analysis data: image paths and scores only, no face images.
+    # Record paths and scores for error analysis, without copying image data.
     thresholds = {f["fold"]: f["threshold"] for f in cosine_table}
     errors = []
     for r in rows:
@@ -880,7 +852,7 @@ def aggregate_view2(variant_dir, variant, final, run_summaries, view1_row=None):
 
 
 def view1_selection(variant, final):
-    """Return the View 1 tuning row FINAL_CONFIG was frozen from; stop if they disagree."""
+    """Check FINAL_CONFIG against the top-ranked View 1 row and return that row."""
     with (RESULTS_DIR / "View_1" / "tuning_summary.csv").open(newline="", encoding="utf-8") as file:
         rows = [row for row in csv.DictReader(file) if row["variant"] == variant]
 
