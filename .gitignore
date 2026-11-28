@@ -11,6 +11,11 @@ __pycache__/
 /Dataset/*
 !/Dataset/preprocessdata.py
 !/Dataset/README.md
+# View 2 protocol manifests (image names and pairs only, no photos) for CI
+!/Dataset/Manifests/
+/Dataset/Manifests/*
+!/Dataset/Manifests/view2_pairs.csv
+!/Dataset/Manifests/view2_images.csv
 # Archives and learned/bulk artifacts anywhere
 *.zip
 *.tar
