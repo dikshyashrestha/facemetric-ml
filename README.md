@@ -19,7 +19,7 @@ All methods use the same randomly initialized ResNet-18 backbone, a 512-dimensio
 | `Model_5_ArcFace/` | ArcFace, including scale and margin experiments |
 | `Comparison_Final/` | Combined results, ROC curves, statistical tests, and comparison script |
 
-The spelling of `Model_4_Spehereface` is retained in the folder and module names. `Project_1.pdf` contains the assignment.
+The spelling of `Model_4_Spehereface` is retained in the folder and module names. References to "PDF 4.2" in the code and saved configs point to section 4.2 of the course assignment, which set the reduced five-run evaluation scheme described below.
 
 ## Setup
 
