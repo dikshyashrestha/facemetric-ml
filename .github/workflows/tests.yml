@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies (CPU-only PyTorch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.13.0 torchvision==0.28.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Unit tests and result reproduction
+        run: python -m pytest -q tests
+
+      - name: Comparison script (204 consistency checks)
+        if: hashFiles('Dataset/Manifests/view2_pairs.csv') != ''
+        run: |
+          python Comparison_Final/compare_methods.py | tee comparison.log
+          grep -q "failed: 0" comparison.log

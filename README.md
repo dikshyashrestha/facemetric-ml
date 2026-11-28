@@ -1,10 +1,40 @@
-# Deep Metric Learning for Face Verification on LFW
+# FaceMetric: deep metric learning for face verification
 
-MSDS-3100 Applied Deep Learning, Project 1 — Clark University
+[![tests](https://github.com/dikshyashrestha/facemetric-ml/actions/workflows/tests.yml/badge.svg)](https://github.com/dikshyashrestha/facemetric-ml/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-try%20it%20in%20your%20browser-4a40d8.svg)](https://dikshyashrestha.github.io/demo.html)
 
-This project compares five ways of learning face embeddings: contrastive loss with a Siamese network, triplet loss, softmax with Center Loss, SphereFace, and ArcFace. We also include plain softmax as a baseline. The task is to decide whether two LFW images show the same person.
+We trained the same ResNet-18 from scratch with five face-embedding losses and compared them head to head on the 6,000 official pairs of Labeled Faces in the Wild (LFW): given two face photos, is it the same person?
 
-All methods use the same randomly initialized ResNet-18 backbone, a 512-dimensional embedding head, and the same preprocessing and evaluation code. The experiments were trained on LFW only, without face-pretrained weights or external training images.
+**Semi-hard triplet loss reached 86.5% verification accuracy, ahead of Center Loss (80.7%), SphereFace (78.1%) and ArcFace (71.8%), with every method trained from scratch on LFW alone.** It beat every other method on at least 8 of the 10 folds.
+
+**[Try the model in your browser →](https://dikshyashrestha.github.io/demo.html)** The demo runs the semi-hard triplet model (run 4) with ONNX Runtime Web, so uploaded photos never leave the device.
+
+![ROC curves for all methods on LFW View 2](Comparison_Final/roc_combined.png)
+
+## Key findings
+
+1. **Triplet mining won clearly.** Semi-hard triplet (86.47%) and batch-hard triplet (85.40%) were the top two methods. Semi-hard led the next non-triplet method, Center Loss, by 5.8 percentage points and was more accurate on all 10 folds.
+2. **Margin-based softmax losses struggled from scratch.** ArcFace and SphereFace are state of the art with large datasets and pretrained models, but here SphereFace only matched plain softmax (78.08% vs 78.27%) and ArcFace trailed at 71.77%. ArcFace's zero-margin control also scored low, so the gap is not caused by the angular margin alone.
+3. **More label information helped.** Siamese training with identity labels (unrestricted) beat pairs-only training (image-restricted) by 3.25 points, and Center Loss improved on softmax by 2.42 points, though softmax kept the higher true-accept rate at a 1% false-accept rate (0.312 vs 0.254).
+
+These come from one seed and a 30-epoch budget; [FINDINGS.md](Comparison_Final/FINDINGS.md) has the full discussion, and [statistical_tests.md](Comparison_Final/statistical_tests.md) the paired tests with Holm correction.
+
+## Team and my role
+
+This was a three-person project for MSDS-3100 Applied Deep Learning at Clark University.
+
+| Member | Contribution |
+|---|---|
+| **Dikshya Shrestha** ([@dikshyashrestha](https://github.com/dikshyashrestha)) | Siamese network with contrastive loss (image-restricted and unrestricted), its View 1 tuning and View 2 evaluation; the final cross-method comparison, statistical tests and result verification (`Comparison_Final/`) |
+| **Aakash Balyan** ([@abalyan2395](https://github.com/abalyan2395)) | Project setup, triplet loss (semi-hard and batch-hard mining) and ArcFace, final README |
+| **Apurba Thapaliya** ([@Apurbathapaliya](https://github.com/Apurbathapaliya)) | Softmax baseline, Center Loss and SphereFace |
+
+Shared code in `Common/` (backbone, data loading, evaluation) is used by all five methods.
+
+## About the experiments
+
+All methods use the same randomly initialized ResNet-18 backbone, a 512-dimensional embedding head, and the same preprocessing and evaluation code. The experiments were trained on LFW only, without face-pretrained weights or external training images. Plain softmax is included as a baseline.
 
 ## Project layout
 
@@ -120,3 +150,41 @@ Siamese and Triplet also save squared-L2 scores and fold results. The aggregate 
 The comparison uses one seed and a limited training budget. Learning-rate searches were run for Triplet and ArcFace; the other methods used a fixed learning rate. Hardware and batch composition differ across methods, so the recorded training times should not be treated as a hardware-independent cost ranking.
 
 Dataset images, model checkpoints, saved weights, local embedding arrays, and the Python environment are excluded from the submission. Source code, result CSVs, configurations, and the report figures provide the submitted experimental evidence.
+
+## Tests
+
+```bash
+python -m pytest -q tests
+```
+
+The 36 tests need no dataset or GPU. They cover the embedding network, the normalization formula, flip-averaged test-time embeddings, all five losses (contrastive, triplet mining, Center Loss, SphereFace, ArcFace) and the View 2 evaluation protocol. They also recompute every number in the results table from the saved `pair_scores.csv` files and check that all methods scored the same official pairs. GitHub Actions runs them on every push.
+
+## Ethics and limitations
+
+Face verification is a sensitive technology, and this project is a learning exercise, not a system for identifying people.
+
+- **Biased data.** LFW consists of news photos of public figures and is far from representative: an analysis by Han and Jain (2014) estimated it is about 77% male and 83% white. A model trained only on LFW is likely to be less accurate for women, darker-skinned people, children and older adults. Large evaluations of commercial face recognition (NIST FRVT, Grother et al., 2019) have found demographic differences in error rates even for much stronger systems. We did not measure accuracy by demographic group, because LFW lacks reliable labels for it.
+- **Errors have real costs.** At the accuracy-maximizing threshold the best model still gets about 1 in 7 pairs wrong, and at a strict 1% false-accept rate it accepts only about 43% of genuine pairs. A false match can wrongly link someone to a person they are not.
+- **Narrow conditions.** The models saw only aligned, mostly front-facing 112×112 crops. Pose, lighting, image quality and occlusion outside that range will degrade results.
+- **Consent.** LFW photos were collected from the web without the subjects' consent for this use. LFW's authors also note that the benchmark does not show an algorithm is suitable for any commercial application.
+- **Evidence limits.** Results use one seed, and the paired tests are exploratory because folds share trained models.
+
+The demo shows a similarity score and a cautious verdict, processes photos only on the user's device, and states these limits.
+
+## References
+
+- G. B. Huang, M. Ramesh, T. Berg, E. Learned-Miller. *Labeled Faces in the Wild: A Database for Studying Face Recognition in Unconstrained Environments.* UMass Amherst Technical Report 07-49, 2007.
+- G. B. Huang, M. Mattar, H. Lee, E. Learned-Miller. *Learning to Align from Scratch.* NeurIPS 2012 (deep-funneled LFW).
+- R. Hadsell, S. Chopra, Y. LeCun. *Dimensionality Reduction by Learning an Invariant Mapping.* CVPR 2006 (contrastive loss).
+- F. Schroff, D. Kalenichenko, J. Philbin. *FaceNet: A Unified Embedding for Face Recognition and Clustering.* CVPR 2015 (triplet loss, semi-hard mining).
+- A. Hermans, L. Beyer, B. Leibe. *In Defense of the Triplet Loss for Person Re-Identification.* arXiv:1703.07737, 2017 (batch-hard mining).
+- Y. Wen, K. Zhang, Z. Li, Y. Qiao. *A Discriminative Feature Learning Approach for Deep Face Recognition.* ECCV 2016 (Center Loss).
+- W. Liu, Y. Wen, Z. Yu, M. Li, B. Raj, L. Song. *SphereFace: Deep Hypersphere Embedding for Face Recognition.* CVPR 2017.
+- J. Deng, J. Guo, N. Xue, S. Zafeiriou. *ArcFace: Additive Angular Margin Loss for Deep Face Recognition.* CVPR 2019.
+- K. He, X. Zhang, S. Ren, J. Sun. *Deep Residual Learning for Image Recognition.* CVPR 2016 (ResNet).
+- H. Han, A. K. Jain. *Age, Gender and Race Estimation from Unconstrained Face Images.* MSU Technical Report MSU-CSE-14-5, 2014.
+- P. Grother, M. Ngan, K. Hanaoka. *Face Recognition Vendor Test (FRVT) Part 3: Demographic Effects.* NIST IR 8280, 2019.
+
+## License
+
+[MIT](LICENSE) © 2026 Dikshya Shrestha, Aakash Balyan, Apurba Thapaliya.
